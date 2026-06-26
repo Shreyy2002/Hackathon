@@ -57,13 +57,13 @@ Implement the full-stack performance management system in five sequential phases
     - Write `RoleSwitcher` component (dropdown: Riya / Alex / HR Admin) that calls `POST /api/auth/switch-role`
     - _Requirements: 1.1, 1.2_
 
-  - [~] 1.9 Checkpoint — Foundation complete
+  - [x] 1.9 Checkpoint — Foundation complete
     - Ensure `docker compose up` starts all services without error
     - Confirm seed script populates three users and sample data
     - Confirm role-switcher sets cookie and `GET /api/employees/{id}/profile` returns data
     - Ask the user if any adjustments are needed before proceeding.
 
-- [ ] 2. Phase 2 — Core Flow: Timeline Append, Goals CRUD + Approval, Timeline UI
+- [x] 2. Phase 2 — Core Flow: Timeline Append, Goals CRUD + Approval, Timeline UI
   - [x] 2.1 Implement `append_event` service and Timeline context schemas
     - Write `backend/app/services/timeline_service.py`: `append_event` function (flush, no commit)
     - Write `backend/app/schemas/timeline.py`: `TimelineEventCreate`, `TimelineEventRead`, `EventType`
@@ -120,14 +120,14 @@ Implement the full-stack performance management system in five sequential phases
     - Handle `WebSocketDisconnect` silently; clean up empty sets
     - _Requirements: 7.5, 7.6, 14.1–14.4_
 
-  - [-] 2.9 Build Timeline UI — infinite scroll, filter pills, WebSocket live updates
+  - [x] 2.9 Build Timeline UI — infinite scroll, filter pills, WebSocket live updates
     - Write `frontend/src/hooks/useEmployeeTimeline.ts`: `useInfiniteQuery` + WebSocket subscription with optimistic prepend
     - Write `frontend/src/components/Timeline/TimelineEventCard.tsx`: displays `event_type` badge, `created_at` via `date-fns`, payload summary
     - Write `frontend/src/components/Timeline/TimelineFilterPills.tsx`: one pill per EventType; on click reset offset and re-fetch
     - Wire into `EmployeeTimelinePage` with infinite scroll trigger on scroll-to-bottom
     - _Requirements: 14.5, 15.1–15.5_
 
-  - [~] 2.10 Checkpoint — Core flow complete
+  - [x] 2.10 Checkpoint — Core flow complete
     - Create a goal as Alex, submit for approval, approve as Riya
     - Verify `timeline_events` contains `goal_created`, `goal_submitted`, `goal_approved` rows
     - Verify Timeline UI shows events in real time via WebSocket

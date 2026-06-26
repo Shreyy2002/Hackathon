@@ -15,8 +15,8 @@ from alembic import context
 # ---------------------------------------------------------------------------
 # Import Base and all models so that Base.metadata is fully populated.
 # ---------------------------------------------------------------------------
-from backend.app.database import Base  # noqa: F401 — registers Base.metadata
-from backend.app.models import (  # noqa: F401 — populate metadata
+from app.database import Base  # noqa: F401 — registers Base.metadata
+from app.models import (  # noqa: F401 — populate metadata
     User,
     Goal,
     TimelineEvent,

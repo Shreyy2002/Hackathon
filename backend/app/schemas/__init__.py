@@ -1,7 +1,7 @@
 """
 Schemas package — public exports.
 """
-from backend.app.schemas.goals import (
+from app.schemas.goals import (
     GoalCreate,
     GoalHealth,
     GoalListResponse,
@@ -9,12 +9,12 @@ from backend.app.schemas.goals import (
     GoalRead,
     GoalStatus,
 )
-from backend.app.schemas.timeline import (
+from app.schemas.timeline import (
     EventType,
     TimelineEventCreate,
     TimelineEventRead,
 )
-from backend.app.schemas.user import (
+from app.schemas.user import (
     EmployeeProfileRead,
     RoleSwitchRequest,
     UserRead,

@@ -11,24 +11,24 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.database import get_db
-from backend.app.dependencies import get_current_user
-from backend.app.models.goal import Goal
-from backend.app.models.goal import GoalStatus as ModelGoalStatus
-from backend.app.models.goal import GoalHealth as ModelGoalHealth
-from backend.app.models.timeline_event import EventType
-from backend.app.models.user import User
-from backend.app.schemas.goals import (
+from app.database import get_db
+from app.dependencies import get_current_user
+from app.models.goal import Goal
+from app.models.goal import GoalStatus as ModelGoalStatus
+from app.models.goal import GoalHealth as ModelGoalHealth
+from app.models.timeline_event import EventType
+from app.models.user import User
+from app.schemas.goals import (
     GoalCreate,
     GoalListResponse,
     GoalProgressUpdate,
     GoalRead,
 )
-from backend.app.services.goal_service import (
+from app.services.goal_service import (
     compute_performance_score,
     get_total_goal_weight,
 )
-from backend.app.services.timeline_service import append_event
+from app.services.timeline_service import append_event
 
 router = APIRouter(prefix="/goals", tags=["goals"])
 

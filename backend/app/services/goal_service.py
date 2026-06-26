@@ -16,7 +16,7 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.models.goal import Goal, GoalStatus
+from app.models.goal import Goal, GoalStatus
 
 
 async def get_total_goal_weight(db: AsyncSession, employee_id: UUID) -> Decimal:
@@ -89,7 +89,7 @@ def build_goal_tree(all_goals: List[Goal]) -> List[Any]:
       - goal_map is fully populated before the second pass begins.
       - Each iteration of the second pass processes exactly one goal.
     """
-    from backend.app.schemas.goals import GoalRead
+    from app.schemas.goals import GoalRead
 
     # First pass: build id → dict map and initialise empty children lists.
     # Loop invariant: goal_map is fully populated after this pass completes.

@@ -7,7 +7,7 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.models.timeline_event import EventType, TimelineEvent
+from app.models.timeline_event import EventType, TimelineEvent
 
 
 async def append_event(

@@ -8,11 +8,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.database import get_db
-from backend.app.models.goal import Goal
-from backend.app.models.timeline_event import TimelineEvent
-from backend.app.models.user import User
-from backend.app.schemas.user import EmployeeProfileRead, GoalReadBrief, TimelineEventBrief, UserRead
+from app.database import get_db
+from app.models.goal import Goal
+from app.models.timeline_event import TimelineEvent
+from app.models.user import User
+from app.schemas.user import EmployeeProfileRead, GoalReadBrief, TimelineEventBrief, UserRead
 
 router = APIRouter(tags=["employees"])
 

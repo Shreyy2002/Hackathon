@@ -7,9 +7,9 @@ Prefix /api is added in main.py, so routes here use bare paths.
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.database import get_db
-from backend.app.models.user import User
-from backend.app.schemas.user import RoleSwitchRequest, UserRead
+from app.database import get_db
+from app.models.user import User
+from app.schemas.user import RoleSwitchRequest, UserRead
 
 router = APIRouter(tags=["auth"])
 
