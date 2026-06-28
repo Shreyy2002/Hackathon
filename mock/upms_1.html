@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UPMS — Unified Performance Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--primary:#2563EB;--primary-dark:#1D4ED8;--primary-light:#EFF6FF;--primary-muted:#BFDBFE;
+--success:#22C55E;--success-bg:#F0FDF4;--success-muted:#BBF7D0;
+--warning:#F59E0B;--warning-bg:#FFFBEB;--warning-muted:#FDE68A;
+--danger:#EF4444;--danger-bg:#FEF2F2;--danger-muted:#FECACA;
+--purple:#8B5CF6;--purple-bg:#F5F3FF;--purple-muted:#DDD6FE;
+--bg:#F8FAFC;--surface:#FFFFFF;--surface2:#F1F5F9;
+--border:#E2E8F0;--border-strong:#CBD5E1;
+--text:#0F172A;--text-secondary:#475569;--text-muted:#94A3B8;
+--sidebar-w:240px;--header-h:56px;
+--radius-sm:6px;--radius:10px;--radius-lg:14px;
+--shadow-sm:0 1px 2px rgba(0,0,0,0.06);
+--shadow:0 2px 8px rgba(0,0,0,0.08);
+--shadow-lg:0 8px 24px rgba(0,0,0,0.10);
+--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;overflow-x:hidden}
+/* LAYOUT */
+.app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:var(--header-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;position:sticky;top:0;z-index:100}
+.topbar-logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px;letter-spacing:-0.3px;color:var(--text)}
+.topbar-logo-mark{width:28px;height:28px;background:var(--primary);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.topbar-logo-mark svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2}
+.topbar-divider{width:1px;height:20px;background:var(--border);margin:0 4px}
+.topbar-spacer{flex:1}
+.topbar-nav{display:flex;align-items:center;gap:4px}
+.topbar-btn{padding:6px 12px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;border:none;background:transparent;color:var(--text-secondary);cursor:pointer;transition:all 0.15s}
+.topbar-btn:hover{background:var(--surface2);color:var(--text)}
+.topbar-btn.active{background:var(--primary-light);color:var(--primary)}
+.account-switcher{position:relative}
+.account-btn{display:flex;align-items:center;gap:8px;padding:5px 10px 5px 5px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;transition:all 0.15s}
+.account-btn:hover{border-color:var(--border-strong);background:var(--surface2)}
+.account-btn .avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.account-btn .name{font-weight:500;color:var(--text)}
+.account-btn .role-badge{font-size:11px;padding:1px 6px;border-radius:20px;font-weight:500}
+.account-btn .chevron{color:var(--text-muted);font-size:12px;margin-left:2px}
+.account-dropdown{position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);min-width:220px;overflow:hidden;display:none;z-index:200}
+.account-dropdown.open{display:block;animation:dropIn 0.15s ease}
+@keyframes dropIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.account-dropdown-header{padding:10px 14px 8px;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)}
+.account-option{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;transition:background 0.1s}
+.account-option:hover{background:var(--surface2)}
+.account-option.selected{background:var(--primary-light)}
+.account-option .av2{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.account-option .info{flex:1}
+.account-option .info .n{font-weight:500;font-size:13px;color:var(--text)}
+.account-option .info .r{font-size:12px;color:var(--text-muted)}
+.check-icon{color:var(--primary);font-size:14px;opacity:0}
+.account-option.selected .check-icon{opacity:1}
+/* MAIN */
+.main{display:flex;flex:1}
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);padding:16px 12px;position:sticky;top:var(--header-h);height:calc(100vh - var(--header-h));overflow-y:auto;flex-shrink:0;transition:all 0.25s}
+.sidebar-section{margin-bottom:24px}
+.sidebar-label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;padding:0 8px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:var(--radius-sm);color:var(--text-secondary);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.12s;position:relative}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--primary-light);color:var(--primary)}
+.nav-item .icon{width:16px;height:16px;flex-shrink:0;opacity:0.7}
+.nav-item.active .icon{opacity:1}
+.nav-badge{margin-left:auto;background:var(--danger);color:#fff;font-size:10px;font-weight:600;padding:1px 5px;border-radius:20px;min-width:18px;text-align:center}
+.nav-badge.yellow{background:var(--warning)}
+.nav-badge.green{background:var(--success)}
+.content{flex:1;padding:24px;overflow-x:hidden;min-width:0}
+/* PAGE SECTIONS */
+.page{display:none}
+.page.active{display:block}
+/* CARDS & GRIDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;transition:box-shadow 0.15s}
+.kpi-card:hover{box-shadow:var(--shadow)}
+.kpi-label{font-size:12px;color:var(--text-muted);font-weight:500;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.kpi-value{font-size:26px;font-weight:600;letter-spacing:-0.5px;color:var(--text);line-height:1}
+.kpi-sub{font-size:12px;color:var(--text-muted);margin-top:4px}
+.kpi-delta{display:inline-flex;align-items:center;gap:2px;font-size:11px;font-weight:600;padding:2px 6px;border-radius:20px}
+.kpi-delta.up{color:#15803D;background:#DCFCE7}
+.kpi-delta.down{color:#DC2626;background:#FEE2E2}
+.kpi-delta.neutral{color:var(--text-muted);background:var(--surface2)}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-title{font-size:15px;font-weight:600;color:var(--text)}
+.section-sub{font-size:13px;color:var(--text-muted);margin-top:2px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-header-title{font-size:14px;font-weight:600;color:var(--text)}
+.card-body{padding:18px}
+/* GOAL CARDS */
+.goal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.goal-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;transition:all 0.15s;cursor:pointer}
+.goal-card:hover{box-shadow:var(--shadow);border-color:var(--border-strong)}
+.goal-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
+.goal-title{font-size:14px;font-weight:600;color:var(--text);line-height:1.3}
+.goal-meta{font-size:12px;color:var(--text-muted);margin-bottom:12px;display:flex;gap:12px}
+.goal-meta span{display:flex;align-items:center;gap:4px}
+.progress-bar-wrap{background:var(--surface2);border-radius:20px;height:6px;overflow:hidden;margin-bottom:8px}
+.progress-bar{height:100%;border-radius:20px;transition:width 0.6s cubic-bezier(0.16,1,0.3,1)}
+.progress-bar.blue{background:var(--primary)}
+.progress-bar.green{background:var(--success)}
+.progress-bar.orange{background:var(--warning)}
+.progress-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted)}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:0.2px}
+.badge.blue{background:var(--primary-light);color:var(--primary)}
+.badge.green{background:var(--success-bg);color:#15803D}
+.badge.orange{background:var(--warning-bg);color:#B45309}
+.badge.red{background:var(--danger-bg);color:#DC2626}
+.badge.purple{background:var(--purple-bg);color:#6D28D9}
+.badge.gray{background:var(--surface2);color:var(--text-secondary)}
+/* TIMELINE */
+.timeline{padding:8px 0}
+.timeline-item{display:flex;gap:16px;padding-bottom:28px;position:relative}
+.timeline-item:last-child{padding-bottom:0}
+.timeline-left{display:flex;flex-direction:column;align-items:center;width:36px;flex-shrink:0}
+.timeline-dot{width:10px;height:10px;border-radius:50%;background:var(--primary);border:2px solid var(--surface);box-shadow:0 0 0 2px var(--primary);flex-shrink:0;margin-top:3px;z-index:1}
+.timeline-dot.green{background:var(--success);box-shadow:0 0 0 2px var(--success)}
+.timeline-dot.orange{background:var(--warning);box-shadow:0 0 0 2px var(--warning)}
+.timeline-dot.purple{background:var(--purple);box-shadow:0 0 0 2px var(--purple)}
+.timeline-dot.gray{background:var(--text-muted);box-shadow:0 0 0 2px var(--text-muted)}
+.timeline-line{width:2px;background:var(--border);flex:1;margin-top:4px}
+.timeline-date{font-size:11px;color:var(--text-muted);font-weight:500;white-space:nowrap;text-align:right;min-width:52px;padding-top:1px}
+.timeline-content{flex:1;min-width:0}
+.timeline-type{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:3px}
+.timeline-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
+.timeline-desc{font-size:12px;color:var(--text-secondary);line-height:1.45}
+/* REVIEW READINESS */
+.readiness-widget{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.readiness-score{display:flex;align-items:center;gap:20px;margin-bottom:18px}
+.readiness-circle{position:relative;width:80px;height:80px;flex-shrink:0}
+.readiness-circle svg{transform:rotate(-90deg)}
+.readiness-circle .score-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--primary)}
+.readiness-details{flex:1}
+.readiness-label{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.readiness-sub{font-size:12px;color:var(--text-muted)}
+.readiness-items{display:flex;flex-direction:column;gap:8px}
+.readiness-item{display:flex;align-items:center;gap:8px;font-size:13px}
+.readiness-check{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.readiness-check.pass{background:var(--success-bg);color:#15803D}
+.readiness-check.fail{background:var(--surface2);color:var(--text-muted)}
+/* PROFILE HEADER */
+.profile-header{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;display:flex;align-items:center;gap:16px}
+.profile-avatar{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex-shrink:0}
+.profile-info{flex:1}
+.profile-name{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-0.3px}
+.profile-role{font-size:13px;color:var(--text-secondary);margin-top:2px}
+.profile-meta{display:flex;gap:16px;margin-top:8px}
+.profile-meta-item{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px}
+.profile-actions{display:flex;gap:8px}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;border:1px solid transparent;font-family:var(--font)}
+.btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn-primary:hover{background:var(--primary-dark);border-color:var(--primary-dark)}
+.btn-secondary{background:var(--surface);color:var(--text);border-color:var(--border)}
+.btn-secondary:hover{background:var(--surface2);border-color:var(--border-strong)}
+.btn-ghost{background:transparent;color:var(--text-secondary);border-color:transparent}
+.btn-ghost:hover{background:var(--surface2);color:var(--text)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-danger{background:var(--danger-bg);color:#DC2626;border-color:var(--danger-muted)}
+.btn-danger:hover{background:#FEE2E2;border-color:var(--danger)}
+/* TABLES */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left}
+td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+/* EMPLOYEE CARDS */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.team-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:all 0.15s}
+.team-card:hover{box-shadow:var(--shadow);border-color:var(--border-strong)}
+.team-card-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;margin-bottom:10px}
+.team-card-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px}
+.team-card-role{font-size:12px;color:var(--text-muted);margin-bottom:10px}
+.team-card-readiness{font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:6px}
+/* ACTIVITY FEED */
+.activity-feed{display:flex;flex-direction:column;gap:1px}
+.activity-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:var(--radius-sm);transition:background 0.1s}
+.activity-item:hover{background:var(--surface2)}
+.activity-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:1px}
+.activity-content{flex:1;min-width:0}
+.activity-title{font-size:13px;font-weight:500;color:var(--text);line-height:1.3}
+.activity-time{font-size:11px;color:var(--text-muted);margin-top:2px}
+/* REVIEW STUDIO */
+.review-studio{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+.review-main{display:flex;flex-direction:column;gap:16px}
+.review-sidebar-panel{display:flex;flex-direction:column;gap:14px}
+.review-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.review-section-header{padding:14px 18px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;gap:8px}
+.review-section-title{font-size:13px;font-weight:600;color:var(--text)}
+.review-section-body{padding:18px}
+.ai-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;letter-spacing:0.3px}
+.ai-text{font-size:13px;color:var(--text-secondary);line-height:1.6}
+.strength-item,.improvement-item{display:flex;align-items:flex-start;gap:10px;padding:10px;border-radius:var(--radius-sm);margin-bottom:8px}
+.strength-item{background:var(--success-bg);border:1px solid var(--success-muted)}
+.improvement-item{background:var(--warning-bg);border:1px solid var(--warning-muted)}
+.str-icon{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px}
+.str-icon.green{background:#BBF7D0;color:#15803D}
+.str-icon.orange{background:#FDE68A;color:#B45309}
+.str-text{font-size:13px;color:var(--text);line-height:1.4}
+.rating-select{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.rating-option{padding:8px 16px;border-radius:var(--radius-sm);border:1.5px solid var(--border);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;color:var(--text-secondary)}
+.rating-option:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.rating-option.selected{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.rating-option.exceeds{border-color:var(--success);color:#15803D;background:var(--success-bg)}
+/* ANALYTICS */
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.chart-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:14px}
+/* HEALTH DASHBOARD */
+.health-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.health-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.health-card-label{font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.health-list{display:flex;flex-direction:column;gap:6px}
+.health-list-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px}
+.health-list-item .name{font-weight:500;color:var(--text)}
+.health-list-item .meta{color:var(--text-muted);font-size:12px}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);width:100%;max-width:480px;box-shadow:var(--shadow-lg);transform:translateY(8px) scale(0.98);transition:transform 0.2s;overflow:hidden}
+.modal-overlay.open .modal{transform:translateY(0) scale(1)}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:15px;font-weight:600;color:var(--text)}
+.modal-close{width:28px;height:28px;border-radius:var(--radius-sm);border:none;background:var(--surface2);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.1s}
+.modal-close:hover{background:var(--border);color:var(--text)}
+.modal-body{padding:20px}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+/* FORM */
+.form-group{margin-bottom:16px}
+.form-label{font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;display:block}
+.form-input,.form-select,.form-textarea{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:var(--font);color:var(--text);background:var(--surface);transition:border-color 0.15s;outline:none}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-muted)}
+.form-textarea{resize:vertical;min-height:80px;line-height:1.5}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* NOTIFICATION DOT */
+.notif-dot{width:6px;height:6px;border-radius:50%;background:var(--danger);position:absolute;top:6px;right:6px}
+/* TABS */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab{padding:8px 14px;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+/* TOOLTIP */
+.tooltip-wrap{position:relative;display:inline-flex}
+.tooltip-wrap .tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#0F172A;color:#fff;font-size:11px;padding:4px 8px;border-radius:4px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.15s}
+.tooltip-wrap:hover .tip{opacity:1}
+/* ALERTS */
+.alert{padding:12px 14px;border-radius:var(--radius-sm);display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;font-size:13px}
+.alert.info{background:var(--primary-light);color:var(--primary);border-left:3px solid var(--primary)}
+.alert.warning{background:var(--warning-bg);color:#B45309;border-left:3px solid var(--warning)}
+.alert.success{background:var(--success-bg);color:#15803D;border-left:3px solid var(--success)}
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:40px 20px}
+.empty-icon{width:48px;height:48px;border-radius:var(--radius);background:var(--surface2);margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.empty-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px}
+.empty-desc{font-size:13px;color:var(--text-muted);max-width:300px;margin:0 auto}
+/* BREADCRUMBS */
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);margin-bottom:16px}
+.breadcrumb a{color:var(--text-secondary);cursor:pointer;transition:color 0.1s}
+.breadcrumb a:hover{color:var(--primary)}
+.breadcrumb-sep{color:var(--border-strong)}
+/* PAGE HEADER */
+.page-header{margin-bottom:24px}
+.page-title{font-size:20px;font-weight:700;color:var(--text);letter-spacing:-0.4px}
+.page-desc{font-size:13px;color:var(--text-muted);margin-top:4px}
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:20px 0}
+/* TWO COL */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:start}
+/* SPARKLINE */
+.sparkline{display:inline-flex;align-items:flex-end;gap:2px;height:24px}
+.sparkline-bar{width:4px;border-radius:2px 2px 0 0;background:var(--primary);opacity:0.7;transition:height 0.4s}
+/* PROGRESS RING */
+.ring-track{fill:none;stroke:var(--surface2);stroke-width:7}
+.ring-fill{fill:none;stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset 0.8s cubic-bezier(0.16,1,0.3,1)}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px}
+/* UTILITY */
+.flex{display:flex}.items-center{align-items:center}.gap-8{gap:8px}.gap-12{gap:12px}.gap-16{gap:16px}.justify-between{justify-content:space-between}.flex-1{flex:1}.text-muted{color:var(--text-muted)}.text-sm{font-size:12px}.font-600{font-weight:600}.mt-4{margin-top:4px}.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}.mt-20{margin-top:20px}.mb-4{margin-bottom:4px}.mb-8{margin-bottom:8px}.mb-12{margin-bottom:12px}.mb-16{margin-bottom:16px}.mb-20{margin-bottom:20px}
+.two-col-chart{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.tag{display:inline-flex;padding:2px 8px;border-radius:var(--radius-sm);font-size:11px;font-weight:500;background:var(--surface2);color:var(--text-secondary)}
+.feedback-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.feedback-meta{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.feedback-text{font-size:13px;color:var(--text-secondary);line-height:1.6}
+textarea.final-comment{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:13px;font-family:var(--font);resize:vertical;min-height:100px;outline:none;color:var(--text);background:var(--surface)}
+textarea.final-comment:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-muted)}
+.suggested-rating-card{background:linear-gradient(135deg,var(--primary-light) 0%,#F0F4FF 100%);border:1px solid var(--primary-muted);border-radius:var(--radius);padding:16px;text-align:center}
+.suggested-rating-value{font-size:28px;font-weight:700;color:var(--primary);margin:6px 0}
+.suggested-rating-label{font-size:12px;color:var(--text-muted)}
+.persona-indicator{height:3px;border-radius:0 0 3px 3px;position:absolute;top:0;left:0;right:0}
+.emp-indicator{background:var(--primary)}
+.mgr-indicator{background:var(--success)}
+.hr-indicator{background:var(--purple)}
+.topbar{position:relative}
+/* ===== WORKLOAD INTELLIGENCE ===== */
+.wl-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
+.wl-pill .dot{width:8px;height:8px;border-radius:50%}
+.wl-healthy{background:var(--success-bg);color:#15803D}.wl-healthy .dot{background:var(--success)}
+.wl-busy{background:var(--warning-bg);color:#B45309}.wl-busy .dot{background:var(--warning)}
+.wl-high{background:#FFF7ED;color:#C2410C}.wl-high .dot{background:#F97316}
+.wl-over{background:var(--danger-bg);color:#DC2626}.wl-over .dot{background:var(--danger)}
+/* gauge */
+.gauge{position:relative;width:160px;height:160px;flex-shrink:0}
+.gauge svg{transform:rotate(-90deg)}
+.gauge-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.gauge-val{font-size:34px;font-weight:700;letter-spacing:-1px;line-height:1}
+.gauge-unit{font-size:11px;color:var(--text-muted);margin-top:4px;max-width:110px}
+.gauge-track{fill:none;stroke:var(--surface2);stroke-width:12}
+.gauge-fill{fill:none;stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1)}
+/* linear capacity meter */
+.cap-meter{height:10px;border-radius:20px;background:var(--surface2);overflow:hidden;position:relative}
+.cap-meter-fill{height:100%;border-radius:20px;transition:width 0.7s cubic-bezier(0.16,1,0.3,1)}
+.cap-scale{display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:4px}
+/* request card */
+.req-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:12px}
+.req-card.flash{animation:flashIn 1.2s ease}
+@keyframes flashIn{0%{background:var(--primary-light);border-color:var(--primary-muted)}100%{background:var(--surface);border-color:var(--border)}}
+.req-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.req-emp{display:flex;align-items:center;gap:8px}
+.req-emp .av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.req-emp .nm{font-size:13px;font-weight:600;color:var(--text)}
+.req-emp .sub{font-size:11px;color:var(--text-muted)}
+.req-goal-title{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-0.2px}
+.req-impact{font-size:13px;color:var(--text-secondary);line-height:1.5}
+.req-attrs{display:flex;flex-wrap:wrap;gap:8px}
+.req-attr{display:flex;flex-direction:column;gap:3px;background:var(--surface2);border-radius:var(--radius-sm);padding:6px 10px;min-width:78px}
+.req-attr .k{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.4px;font-weight:600}
+.req-attr .v{font-size:13px;font-weight:600;color:var(--text)}
+.req-actions{display:flex;gap:8px;border-top:1px solid var(--border);padding-top:12px}
+.req-actions .btn{flex:1;justify-content:center}
+/* full goal card */
+.gc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:10px;transition:all .15s}
+.gc:hover{box-shadow:var(--shadow);border-color:var(--border-strong)}
+.gc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.gc-title{font-size:14px;font-weight:600;color:var(--text);line-height:1.3}
+.gc-badges{display:flex;flex-wrap:wrap;gap:6px}
+.gc-stats{display:flex;gap:16px;font-size:12px;color:var(--text-muted)}
+.gc-stats b{color:var(--text);font-weight:600}
+.gc-impact{font-size:12px;color:var(--text-secondary);background:var(--surface2);border-radius:var(--radius-sm);padding:8px 10px;line-height:1.45}
+.src-chip{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;letter-spacing:0.2px}
+.src-top{background:var(--primary-light);color:var(--primary)}
+.src-bottom{background:var(--purple-bg);color:#6D28D9}
+/* team capacity rows */
+.cap-row{display:grid;grid-template-columns:200px 1fr 96px;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)}
+.cap-row:last-child{border-bottom:none}
+.cap-emp{display:flex;align-items:center;gap:10px;min-width:0}
+.cap-emp .av{border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
+.cap-emp .nm{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cap-emp .rl{font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cap-hours{text-align:right;font-size:16px;font-weight:700;letter-spacing:-0.3px}
+/* distribution bars */
+.dist{display:flex;flex-direction:column;gap:10px}
+.dist-row{display:grid;grid-template-columns:72px 1fr 40px;align-items:center;gap:10px}
+.dist-label{font-size:12px;color:var(--text-secondary);font-weight:500}
+.dist-track{height:18px;background:var(--surface2);border-radius:var(--radius-sm);overflow:hidden}
+.dist-fill{height:100%;border-radius:var(--radius-sm);transition:width .7s cubic-bezier(0.16,1,0.3,1);min-width:2px}
+.dist-val{font-size:12px;font-weight:600;color:var(--text);text-align:right}
+/* heatmap */
+.heatmap{display:flex;flex-direction:column;gap:8px}
+.heat-row{display:grid;grid-template-columns:110px 1fr;align-items:center;gap:12px}
+.heat-cells{display:flex;gap:6px}
+.heat-cell{flex:1;min-width:0;height:34px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;letter-spacing:0.2px}
+/* overload modal */
+.over-stat{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)}
+.over-stat:last-of-type{border-bottom:none}
+.over-stat .k{font-size:13px;color:var(--text-secondary)}
+.over-stat .v{font-size:15px;font-weight:700}
+.over-arrow{text-align:center;color:var(--text-muted);font-size:18px;padding:2px}
+.over-rec{background:var(--primary-light);border:1px solid var(--primary-muted);border-radius:var(--radius);padding:14px;margin-top:14px;display:flex;gap:10px;align-items:flex-start}
+/* toast */
+.toast-wrap{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:500;display:flex;flex-direction:column;gap:8px;align-items:center}
+.toast{background:#0F172A;color:#fff;padding:10px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:8px;animation:toastIn .25s ease;max-width:90vw}
+.toast.success{background:#15803D}.toast.warn{background:#B45309}.toast.danger{background:#B91C1C}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+/* mini grid + segmented bar */
+.mini-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.seg{display:flex;height:12px;border-radius:20px;overflow:hidden;background:var(--surface2)}
+.seg span{height:100%}
+.seg-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px}
+.seg-legend .it{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary)}
+.seg-legend .sw{width:10px;height:10px;border-radius:3px}
+
+</style>
+</head>
+<body>
+<div class="app">
+<!-- TOP BAR -->
+<header class="topbar" id="topbar">
+  <div class="persona-indicator emp-indicator" id="personaIndicator"></div>
+  <div class="topbar-logo">
+    <div class="topbar-logo-mark">
+      <svg viewBox="0 0 16 16"><polyline points="2,12 6,7 10,10 14,4"/></svg>
+    </div>
+    UPMS
+  </div>
+  <div class="topbar-divider"></div>
+  <span style="font-size:13px;color:var(--text-muted);font-weight:500" id="topbarContext">Employee Workspace</span>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-nav">
+    <button class="topbar-btn" onclick="showNotif()">🔔</button>
+    <button class="topbar-btn" onclick="showHelp()">?</button>
+  </div>
+  <div class="account-switcher">
+    <div class="account-btn" onclick="toggleDropdown()">
+      <div class="avatar" id="topAvatar" style="background:#EFF6FF;color:#2563EB">JD</div>
+      <div style="display:flex;flex-direction:column">
+        <span class="name" id="topName">John Doe</span>
+        <span class="role-badge" id="topRoleBadge" style="color:#2563EB;background:#EFF6FF">Employee</span>
+      </div>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="account-dropdown" id="accountDropdown">
+      <div class="account-dropdown-header">Switch account</div>
+      <div class="account-option selected" onclick="switchUser('employee')">
+        <div class="av2" style="background:#EFF6FF;color:#2563EB">JD</div>
+        <div class="info"><div class="n">John Doe</div><div class="r">Senior Software Engineer</div></div>
+        <span class="check-icon">✓</span>
+      </div>
+      <div class="account-option" onclick="switchUser('manager')">
+        <div class="av2" style="background:#F0FDF4;color:#16A34A">SW</div>
+        <div class="info"><div class="n">Sarah Wilson</div><div class="r">Engineering Manager</div></div>
+        <span class="check-icon">✓</span>
+      </div>
+      <div class="account-option" onclick="switchUser('hr')">
+        <div class="av2" style="background:#F5F3FF;color:#7C3AED">HR</div>
+        <div class="info"><div class="n">HR Admin</div><div class="r">HR Business Partner</div></div>
+        <span class="check-icon">✓</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="main">
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar"></aside>
+
+<!-- CONTENT -->
+<main class="content" id="mainContent">
+<!-- ======= EMPLOYEE PAGES ======= -->
+<!-- E: Dashboard -->
+<div class="page" id="page-emp-dashboard">
+  <div class="page-header">
+    <div class="flex items-center gap-8" style="justify-content:space-between">
+      <div>
+        <div class="page-title">Good morning, John 👋</div>
+        <div class="page-desc">Here's your performance snapshot for Q2 2026</div>
+      </div>
+      <div class="flex gap-8">
+        <button class="btn btn-secondary" onclick="navigateTo('emp-timeline')">View timeline</button>
+        <button class="btn btn-primary" onclick="navigateTo('emp-workspace')">Open workspace</button>
+      </div>
+    </div>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Goal completion</div>
+      <div class="kpi-value">75%</div>
+      <div class="kpi-sub"><span class="kpi-delta up">↑ 12%</span> vs last quarter</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Review readiness</div>
+      <div class="kpi-value" style="color:var(--primary)">87%</div>
+      <div class="kpi-sub"><span class="kpi-delta up">↑ 8%</span> this month</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Achievements</div>
+      <div class="kpi-value">6</div>
+      <div class="kpi-sub">3 added this quarter</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Pending feedback</div>
+      <div class="kpi-value" style="color:var(--warning)">2</div>
+      <div class="kpi-sub">From Sarah Wilson</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Active goals</div>
+      <div class="kpi-value">4</div>
+      <div class="kpi-sub">1 due this month</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Timeline events</div>
+      <div class="kpi-value">18</div>
+      <div class="kpi-sub">Last 90 days</div>
+    </div>
+  </div>
+  <div class="two-col-chart mb-20">
+    <div class="chart-card">
+      <div class="chart-title">Goal progress over time</div>
+      <div style="position:relative;height:220px"><canvas id="empGoalChart" role="img" aria-label="Line chart showing goal progress from Jan to Jun 2026"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Activity this month</div>
+      <div style="position:relative;height:220px"><canvas id="empActivityChart" role="img" aria-label="Bar chart of monthly activity"></canvas></div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">Recent activity</div></div>
+      <div class="card-body" style="padding:8px 0">
+        <div class="activity-feed">
+          <div class="activity-item"><div class="activity-dot" style="background:#EFF6FF;color:#2563EB">🏆</div><div class="activity-content"><div class="activity-title">Achievement added — API latency reduction</div><div class="activity-time">2 hours ago</div></div></div>
+          <div class="activity-item"><div class="activity-dot" style="background:#F0FDF4;color:#16A34A">💬</div><div class="activity-content"><div class="activity-title">Feedback received from Sarah Wilson</div><div class="activity-time">Yesterday</div></div></div>
+          <div class="activity-item"><div class="activity-dot" style="background:#EFF6FF;color:#2563EB">🎯</div><div class="activity-content"><div class="activity-title">Goal progress updated — AWS cost reduction 75%</div><div class="activity-time">3 days ago</div></div></div>
+          <div class="activity-item"><div class="activity-dot" style="background:#F5F3FF;color:#7C3AED">✨</div><div class="activity-content"><div class="activity-title">Review summary generated</div><div class="activity-time">1 week ago</div></div></div>
+          <div class="activity-item"><div class="activity-dot" style="background:#FFFBEB;color:#B45309">📌</div><div class="activity-content"><div class="activity-title">Milestone completed — Phase 2 shipped</div><div class="activity-time">2 weeks ago</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">Goals snapshot</div><button class="btn btn-ghost btn-sm" onclick="navigateTo('emp-workspace')">View all →</button></div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+        <div>
+          <div class="flex justify-between mb-4"><span style="font-size:13px;font-weight:500">Reduce AWS costs by 30%</span><span class="badge green">On track</span></div>
+          <div class="progress-bar-wrap"><div class="progress-bar blue" style="width:75%"></div></div>
+          <div class="progress-label"><span>75%</span><span>Due Dec 2026</span></div>
+        </div>
+        <div class="divider" style="margin:4px 0"></div>
+        <div>
+          <div class="flex justify-between mb-4"><span style="font-size:13px;font-weight:500">Ship mobile SDK v2.0</span><span class="badge orange">At risk</span></div>
+          <div class="progress-bar-wrap"><div class="progress-bar orange" style="width:55%"></div></div>
+          <div class="progress-label"><span>55%</span><span>Due Aug 2026</span></div>
+        </div>
+        <div class="divider" style="margin:4px 0"></div>
+        <div>
+          <div class="flex justify-between mb-4"><span style="font-size:13px;font-weight:500">System reliability 99.9%</span><span class="badge green">On track</span></div>
+          <div class="progress-bar-wrap"><div class="progress-bar green" style="width:90%"></div></div>
+          <div class="progress-label"><span>90%</span><span>Due Sep 2026</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- E: Workspace -->
+<div class="page" id="page-emp-workspace">
+  <div class="profile-header">
+    <div class="profile-avatar" style="background:#EFF6FF;color:#2563EB;font-size:20px">JD</div>
+    <div class="profile-info">
+      <div class="profile-name">John Doe</div>
+      <div class="profile-role">Senior Software Engineer · Engineering</div>
+      <div class="profile-meta">
+        <div class="profile-meta-item">📊 Reports to Sarah Wilson</div>
+        <div class="profile-meta-item">📅 Started Jan 2023</div>
+        <div class="profile-meta-item">🏢 Remote · UTC+5:30</div>
+      </div>
+    </div>
+    <div class="profile-actions">
+      <button class="btn btn-secondary btn-sm" onclick="openModal('achievementModal')">+ Achievement</button>
+      <button class="btn btn-primary btn-sm" onclick="navigateTo('emp-timeline')">View timeline</button>
+    </div>
+  </div>
+  <div class="tabs" id="empWorkspaceTabs">
+    <div class="tab active" onclick="switchTab('emp','goals')">Goals</div>
+    <div class="tab" onclick="switchTab('emp','achievements')">Achievements</div>
+    <div class="tab" onclick="switchTab('emp','feedback')">Feedback</div>
+    <div class="tab" onclick="switchTab('emp','review')">Review summary</div>
+  </div>
+  <div class="tab-panel active" id="emp-goals">
+    <div class="section-header">
+      <div><div class="section-title">Active goals</div><div class="section-sub">4 goals assigned for 2026</div></div>
+      <button class="btn btn-secondary btn-sm">+ Add progress update</button>
+    </div>
+    <div class="goal-grid">
+      <div class="goal-card">
+        <div class="goal-card-header"><div class="goal-title">Reduce AWS infrastructure costs by 30%</div><span class="badge green">On track</span></div>
+        <div class="goal-meta"><span>🎯 Cost reduction</span><span>⚖️ Weight: 30%</span></div>
+        <div class="progress-bar-wrap"><div class="progress-bar blue" style="width:75%"></div></div>
+        <div class="progress-label"><span style="font-weight:600;color:var(--primary)">75%</span><span>Due Dec 2026</span></div>
+        <div style="margin-top:10px;display:flex;gap:6px"><span class="tag">Infrastructure</span><span class="tag">Cost</span></div>
+      </div>
+      <div class="goal-card">
+        <div class="goal-card-header"><div class="goal-title">Ship mobile SDK v2.0 with 50+ integrations</div><span class="badge orange">At risk</span></div>
+        <div class="goal-meta"><span>🚀 Product delivery</span><span>⚖️ Weight: 25%</span></div>
+        <div class="progress-bar-wrap"><div class="progress-bar orange" style="width:55%"></div></div>
+        <div class="progress-label"><span style="font-weight:600;color:var(--warning)">55%</span><span>Due Aug 2026</span></div>
+        <div style="margin-top:10px;display:flex;gap:6px"><span class="tag">Mobile</span><span class="tag">SDK</span></div>
+      </div>
+      <div class="goal-card">
+        <div class="goal-card-header"><div class="goal-title">Achieve 99.9% system reliability (SLO)</div><span class="badge green">On track</span></div>
+        <div class="goal-meta"><span>🛡️ Reliability</span><span>⚖️ Weight: 25%</span></div>
+        <div class="progress-bar-wrap"><div class="progress-bar green" style="width:90%"></div></div>
+        <div class="progress-label"><span style="font-weight:600;color:var(--success)">90%</span><span>Due Sep 2026</span></div>
+        <div style="margin-top:10px;display:flex;gap:6px"><span class="tag">SRE</span><span class="tag">Uptime</span></div>
+      </div>
+      <div class="goal-card">
+        <div class="goal-card-header"><div class="goal-title">Lead 2 engineers — mentorship program</div><span class="badge blue">In progress</span></div>
+        <div class="goal-meta"><span>👥 Leadership</span><span>⚖️ Weight: 20%</span></div>
+        <div class="progress-bar-wrap"><div class="progress-bar blue" style="width:40%"></div></div>
+        <div class="progress-label"><span style="font-weight:600">40%</span><span>Due Dec 2026</span></div>
+        <div style="margin-top:10px;display:flex;gap:6px"><span class="tag">Leadership</span><span class="tag">Mentorship</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="tab-panel" id="emp-achievements">
+    <div class="section-header"><div class="section-title">Achievements</div><button class="btn btn-primary btn-sm" onclick="openModal('achievementModal')">+ Add achievement</button></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="feedback-card"><div class="feedback-meta"><span class="badge purple">Technical Impact</span><span class="badge gray">Q2 2026</span></div><div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Reduced API latency by 47%</div><div class="feedback-text">Redesigned the data fetching layer using connection pooling and caching. Reduced p99 latency from 890ms to 470ms, directly improving user experience for 120K+ active users.</div></div>
+      <div class="feedback-card"><div class="feedback-meta"><span class="badge green">Cost Savings</span><span class="badge gray">Q1 2026</span></div><div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Cut AWS spend by $85K/year</div><div class="feedback-text">Audited all EC2 and RDS usage, right-sized 23 instances, and migrated 4 services to serverless. On track to exceed the 30% reduction goal.</div></div>
+      <div class="feedback-card"><div class="feedback-meta"><span class="badge blue">Delivery</span><span class="badge gray">Q1 2026</span></div><div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Shipped payment gateway refactor — zero downtime</div><div class="feedback-text">Coordinated a live migration of the payment processing layer with zero customer-facing incidents across a 6-hour window.</div></div>
+      <div class="feedback-card"><div class="feedback-meta"><span class="badge orange">Leadership</span><span class="badge gray">Q4 2025</span></div><div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Mentored 2 junior engineers through onboarding</div><div class="feedback-text">Created onboarding runbooks, conducted bi-weekly 1:1s, and helped both engineers ship their first production features within 30 days.</div></div>
+    </div>
+  </div>
+  <div class="tab-panel" id="emp-feedback">
+    <div class="section-title mb-16">Feedback received</div>
+    <div class="feedback-card">
+      <div class="feedback-meta">
+        <div class="profile-avatar" style="width:32px;height:32px;font-size:11px;background:#F0FDF4;color:#16A34A">SW</div>
+        <div><div style="font-size:13px;font-weight:600">Sarah Wilson</div><div style="font-size:11px;color:var(--text-muted)">Engineering Manager · 3 days ago</div></div>
+        <span class="badge green" style="margin-left:auto">Positive</span>
+      </div>
+      <div class="feedback-text">"John consistently delivers high-quality work and has shown exceptional ownership on the infrastructure cost reduction project. His ability to break down complex problems and communicate technical constraints to stakeholders is a real differentiator."</div>
+    </div>
+    <div class="feedback-card">
+      <div class="feedback-meta">
+        <div class="profile-avatar" style="width:32px;height:32px;font-size:11px;background:#F0FDF4;color:#16A34A">SW</div>
+        <div><div style="font-size:13px;font-weight:600">Sarah Wilson</div><div style="font-size:11px;color:var(--text-muted)">Engineering Manager · 2 weeks ago</div></div>
+        <span class="badge orange" style="margin-left:auto">Growth area</span>
+      </div>
+      <div class="feedback-text">"One area to focus on: documentation. While John's code quality is excellent, the team would benefit from more inline comments and architectural decision records (ADRs) when making significant system changes."</div>
+    </div>
+  </div>
+  <div class="tab-panel" id="emp-review">
+    <div class="alert info">✨ Review summary was auto-generated from your 18 timeline events. Your manager will finalize this during review season.</div>
+    <div style="display:grid;grid-template-columns:1fr 280px;gap:16px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="review-section">
+          <div class="review-section-header"><span class="ai-badge">✦ AI Generated</span><div class="review-section-title" style="margin-left:6px">Performance summary</div></div>
+          <div class="review-section-body"><div class="ai-text">John has had a strong Q1–Q2 2026, demonstrating significant technical impact through infrastructure optimization work that has yielded measurable business outcomes. His reduction of API latency by 47% and projected $85K in annual AWS savings reflect both technical depth and commercial awareness. He took full ownership of a high-stakes payment migration with zero incidents, which speaks to his operational discipline. Growth areas include documentation practices and cross-team async communication, which he has acknowledged and begun addressing.</div></div>
+        </div>
+        <div class="review-section">
+          <div class="review-section-header"><div class="review-section-title">Strengths</div></div>
+          <div class="review-section-body">
+            <div class="strength-item"><div class="str-icon green">✓</div><div class="str-text"><strong>Technical execution</strong> — Consistently delivers complex technical work with measurable outcomes (47% latency reduction, $85K savings)</div></div>
+            <div class="strength-item"><div class="str-icon green">✓</div><div class="str-text"><strong>Ownership mentality</strong> — Leads projects end-to-end including coordination, risk mitigation, and post-launch monitoring</div></div>
+            <div class="strength-item"><div class="str-icon green">✓</div><div class="str-text"><strong>Cross-functional collaboration</strong> — Communicates technical constraints clearly to product and business stakeholders</div></div>
+          </div>
+        </div>
+        <div class="review-section">
+          <div class="review-section-header"><div class="review-section-title">Growth areas</div></div>
+          <div class="review-section-body">
+            <div class="improvement-item"><div class="str-icon orange">→</div><div class="str-text"><strong>Documentation</strong> — Inline comments and architectural decision records need improvement to support team knowledge transfer</div></div>
+            <div class="improvement-item"><div class="str-icon orange">→</div><div class="str-text"><strong>Async communication</strong> — Status updates on the SDK project have been infrequent, causing ambiguity for stakeholders</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="readiness-widget">
+        <div class="readiness-score">
+          <div class="readiness-circle">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <circle class="ring-track" cx="40" cy="40" r="33"/>
+              <circle class="ring-fill" cx="40" cy="40" r="33" stroke="var(--primary)" stroke-dasharray="207.3" stroke-dashoffset="26.9"/>
+            </svg>
+            <div class="score-text">87%</div>
+          </div>
+          <div class="readiness-details">
+            <div class="readiness-label">Review readiness</div>
+            <div class="readiness-sub">Ready for review</div>
+          </div>
+        </div>
+        <div class="readiness-items">
+          <div class="readiness-item"><div class="readiness-check pass">✓</div>Goals tracked (4/4)</div>
+          <div class="readiness-item"><div class="readiness-check pass">✓</div>Feedback received (2)</div>
+          <div class="readiness-item"><div class="readiness-check pass">✓</div>Achievements logged (6)</div>
+          <div class="readiness-item"><div class="readiness-check pass">✓</div>Progress updated</div>
+          <div class="readiness-item"><div class="readiness-check fail">–</div>Check-ins (0/2 due)</div>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Suggested rating</div>
+          <div style="font-size:16px;font-weight:700;color:var(--primary)">Exceeds expectations</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- E: Timeline -->
+<div class="page" id="page-emp-timeline">
+  <div class="page-header">
+    <div class="page-title">Performance timeline</div>
+    <div class="page-desc">Your complete performance evidence history — every event that will inform your review</div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">Timeline · 18 events</div><button class="btn btn-secondary btn-sm">Export</button></div>
+      <div class="card-body">
+        <div class="timeline">
+          <div class="timeline-item">
+            <div style="text-align:right;min-width:52px;padding-top:1px"><div style="font-size:11px;color:var(--text-muted);font-weight:500">Jun 10</div></div>
+            <div class="timeline-left" style="margin-top:3px"><div class="timeline-dot purple"></div><div class="timeline-line"></div></div>
+            <div class="timeline-content"><div class="timeline-type" style="color:var(--purple)">✨ Review generated</div><div class="timeline-title">Q2 review summary auto-generated</div><div class="timeline-desc">AI analysis of 18 evidence events. Suggested rating: Exceeds expectations.</div></div>
+          </div>
+          <div class="timeline-item">
+            <div style="text-align:right;min-width:52px;padding-top:1px"><div style="font-size:11px;color:var(--text-muted);font-weight:500">Jun 08</div></div>
+            <div class="timeline-left" style="margin-top:3px"><div class="timeline-dot green"></div><div class="timeline-line"></div></div>
+            <div class="timeline-content"><div class="timeline-type" style="color:var(--success)">🏆 Achievement</div><div class="timeline-title">API latency reduced by 47%</div><div class="timeline-desc">Redesigned data fetching layer using connection pooling. p99 latency dropped from 890ms to 470ms.</div></div>
+          </div>
+          <div class="timeline-item">
+            <div style="text-align:right;min-width:52px;padding-top:1px"><div style="font-size:11px;color:var(--text-muted);font-weight:500">Jun 03</div></div>
+            <div class="timeline-left" style="margin-top:3px"><div class="timeline-dot"></div><div class="timeline-line"></div></div>
+            <div class="timeline-content"><div class="timeline-type" style="color:var(--primary)">💬 Feedback received</div><div class="timeline-title">Positive feedback from Sarah Wilson</div><div class="timeline-desc">Manager recognized ownership, delivery quality, and stakeholder communication on the infrastructure project.</div></div>
+          </div>
+          <div class="timeline-item">
+            <div style="text-align:right;min-width:52px;padding-top:1px"><div style="font-size:11px;color:var(--text-muted);font-weight:500">May 22</div></div>
+            <div class="timeline-left" style="margin-top:3px"><div class="timeline-dot"></div><div class="timeline-line"></div></div>
+            <div class="timeline-content"><div class="timeline-type" style="color:var(--primary)">📊 Progress update</div><div class="timeline-title">AWS cost reduction — 75% complete</div><div class="timeline-desc">Right-sized 23 instances. Projected $85K annual savings confirmed by Finance.</div></div>
+          </div>
+          <div class="timeline-item">
+            <div style="text-align:right;min-width:52px;padding-top:1px"><div style="font-size:11px;color:var(--text-muted);font-weight:500">May 10</div></div>
+            <div class="timeline-left" style="margin-top:3px"><div class="timeline-dot orange"></div><div class="timeline-line"></div></div>
+            <div class="timeline-content"><div class="timeline-type" style="color:var(--warning)">🚩 Milestone</div><div class="timeline-title">Phase 2 infrastructure migration complete</div><div class="timeline-desc">Migrated 4 services to serverless. Zero downtime during cutover.</div></div>
+          </div>
+          <div class="timeline-item">
+            <div style="text-align:right;min-width:52px;padding-top:1px"><div style="font-size:11px;color:var(--text-muted);font-weight:500">Apr 15</div></div>
+            <div class="timeline-left" style="margin-top:3px"><div class="timeline-dot green"></div><div class="timeline-line"></div></div>
+            <div class="timeline-content"><div class="timeline-type" style="color:var(--success)">🏆 Achievement</div><div class="timeline-title">Payment gateway migration — zero incidents</div><div class="timeline-desc">Live migration completed across 6-hour window with no customer-facing incidents.</div></div>
+          </div>
+          <div class="timeline-item">
+            <div style="text-align:right;min-width:52px;padding-top:1px"><div style="font-size:11px;color:var(--text-muted);font-weight:500">Mar 20</div></div>
+            <div class="timeline-left" style="margin-top:3px"><div class="timeline-dot"></div><div class="timeline-line"></div></div>
+            <div class="timeline-content"><div class="timeline-type" style="color:var(--primary)">💬 Feedback received</div><div class="timeline-title">Growth area: documentation</div><div class="timeline-desc">Sarah flagged need for more inline comments and ADRs for significant architectural changes.</div></div>
+          </div>
+          <div class="timeline-item">
+            <div style="text-align:right;min-width:52px;padding-top:1px"><div style="font-size:11px;color:var(--text-muted);font-weight:500">Feb 01</div></div>
+            <div class="timeline-left" style="margin-top:3px"><div class="timeline-dot"></div><div class="timeline-line"></div></div>
+            <div class="timeline-content"><div class="timeline-type" style="color:var(--primary)">📊 Progress update</div><div class="timeline-title">AWS cost reduction — 40% complete</div><div class="timeline-desc">Initial audit complete. 12 instances identified for right-sizing.</div></div>
+          </div>
+          <div class="timeline-item">
+            <div style="text-align:right;min-width:52px;padding-top:1px"><div style="font-size:11px;color:var(--text-muted);font-weight:500">Jan 15</div></div>
+            <div class="timeline-left" style="margin-top:3px"><div class="timeline-dot green"></div><div class="timeline-line"></div></div>
+            <div class="timeline-content"><div class="timeline-type" style="color:var(--success)">✅ Goal approved</div><div class="timeline-title">All Q1 goals approved by Sarah Wilson</div><div class="timeline-desc">4 goals approved with weights assigned. Review cycle officially started.</div></div>
+          </div>
+          <div class="timeline-item">
+            <div style="text-align:right;min-width:52px;padding-top:1px"><div style="font-size:11px;color:var(--text-muted);font-weight:500">Jan 08</div></div>
+            <div class="timeline-left" style="margin-top:3px"><div class="timeline-dot gray"></div></div>
+            <div class="timeline-content"><div class="timeline-type">🎯 Goal created</div><div class="timeline-title">2026 performance goals assigned</div><div class="timeline-desc">Sarah Wilson created and assigned 4 goals for the 2026 performance cycle.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="readiness-widget">
+        <div class="flex items-center justify-between mb-12"><div style="font-size:14px;font-weight:600">Review readiness</div><span class="badge blue">87%</span></div>
+        <div class="progress-bar-wrap" style="height:8px;margin-bottom:12px"><div class="progress-bar blue" style="width:87%"></div></div>
+        <div class="readiness-items">
+          <div class="readiness-item"><div class="readiness-check pass">✓</div>Goals tracked</div>
+          <div class="readiness-item"><div class="readiness-check pass">✓</div>Feedback received</div>
+          <div class="readiness-item"><div class="readiness-check pass">✓</div>Achievements logged</div>
+          <div class="readiness-item"><div class="readiness-check pass">✓</div>Progress updated</div>
+          <div class="readiness-item"><div class="readiness-check fail">–</div>Check-ins pending</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-header-title">Evidence breakdown</div></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:8px">
+          <div class="flex justify-between items-center"><span style="font-size:13px">🏆 Achievements</span><span class="badge green">6</span></div>
+          <div class="flex justify-between items-center"><span style="font-size:13px">💬 Feedback</span><span class="badge blue">4</span></div>
+          <div class="flex justify-between items-center"><span style="font-size:13px">📊 Progress updates</span><span class="badge gray">5</span></div>
+          <div class="flex justify-between items-center"><span style="font-size:13px">🚩 Milestones</span><span class="badge orange">2</span></div>
+          <div class="flex justify-between items-center"><span style="font-size:13px">✅ Goal events</span><span class="badge gray">1</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= MANAGER PAGES ======= -->
+<!-- M: Dashboard -->
+<div class="page" id="page-mgr-dashboard">
+  <div class="page-header">
+    <div class="flex justify-between items-center">
+      <div><div class="page-title">Team overview</div><div class="page-desc">Engineering · 4 direct reports · Q2 2026 review cycle</div></div>
+      <div class="flex gap-8">
+        <button class="btn btn-secondary" onclick="openModal('createGoalModal')">+ Create goal</button>
+        <button class="btn btn-primary" onclick="navigateTo('mgr-review')">Open review studio</button>
+      </div>
+    </div>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Pending approvals</div>
+      <div class="kpi-value" style="color:var(--warning)">3</div>
+      <div class="kpi-sub">Goal updates to review</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Requiring attention</div>
+      <div class="kpi-value" style="color:var(--danger)">2</div>
+      <div class="kpi-sub">Below 50% readiness</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Team avg readiness</div>
+      <div class="kpi-value">68%</div>
+      <div class="kpi-sub"><span class="kpi-delta up">↑ 9%</span> this month</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Completed reviews</div>
+      <div class="kpi-value">1</div>
+      <div class="kpi-sub">3 remaining</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Feedback given</div>
+      <div class="kpi-value">12</div>
+      <div class="kpi-sub">This quarter</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Active goals</div>
+      <div class="kpi-value">16</div>
+      <div class="kpi-sub">Across 4 reports</div>
+    </div>
+  </div>
+  <div class="section-header"><div class="section-title">My team</div><button class="btn btn-ghost btn-sm" onclick="navigateTo('mgr-team')">View all →</button></div>
+  <div class="team-grid mb-20">
+    <div class="team-card" onclick="navigateTo('mgr-employee-detail')">
+      <div class="team-card-avatar" style="background:#EFF6FF;color:#2563EB">JD</div>
+      <div class="team-card-name">John Doe</div>
+      <div class="team-card-role">Senior Software Engineer</div>
+      <div class="progress-bar-wrap mb-8"><div class="progress-bar blue" style="width:87%"></div></div>
+      <div class="team-card-readiness">Review readiness <span class="badge green">87%</span></div>
+    </div>
+    <div class="team-card" onclick="navigateTo('mgr-team')">
+      <div class="team-card-avatar" style="background:#F0FDF4;color:#16A34A">MC</div>
+      <div class="team-card-name">Mike Chen</div>
+      <div class="team-card-role">Software Engineer</div>
+      <div class="progress-bar-wrap mb-8"><div class="progress-bar orange" style="width:70%"></div></div>
+      <div class="team-card-readiness">Review readiness <span class="badge orange">70%</span></div>
+    </div>
+    <div class="team-card" onclick="navigateTo('mgr-team')">
+      <div class="team-card-avatar" style="background:#FFF7ED;color:#C2410C">AK</div>
+      <div class="team-card-name">Alex Kumar</div>
+      <div class="team-card-role">Junior Engineer</div>
+      <div class="progress-bar-wrap mb-8"><div class="progress-bar" style="width:40%;background:var(--danger)"></div></div>
+      <div class="team-card-readiness">Review readiness <span class="badge red">40%</span></div>
+    </div>
+    <div class="team-card" onclick="navigateTo('mgr-team')">
+      <div class="team-card-avatar" style="background:#F5F3FF;color:#7C3AED">EB</div>
+      <div class="team-card-name">Emma Brown</div>
+      <div class="team-card-role">Senior Engineer</div>
+      <div class="progress-bar-wrap mb-8"><div class="progress-bar blue" style="width:82%"></div></div>
+      <div class="team-card-readiness">Review readiness <span class="badge blue">82%</span></div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">Pending actions</div><span class="badge red">3 items</span></div>
+      <div class="card-body" style="padding:0">
+        <div class="activity-feed">
+          <div class="activity-item"><div class="activity-dot" style="background:#FEF2F2;color:#DC2626">🎯</div><div class="activity-content"><div class="activity-title">Goal approval needed — Alex Kumar</div><div class="activity-time">Leadership program goal · Added 2 days ago</div></div><button class="btn btn-secondary btn-sm" style="flex-shrink:0;margin-top:2px">Review</button></div>
+          <div class="activity-item"><div class="activity-dot" style="background:#FFFBEB;color:#B45309">📊</div><div class="activity-content"><div class="activity-title">Progress update to verify — Mike Chen</div><div class="activity-time">SDK milestone claimed · Yesterday</div></div><button class="btn btn-secondary btn-sm" style="flex-shrink:0;margin-top:2px">Review</button></div>
+          <div class="activity-item"><div class="activity-dot" style="background:#FEF2F2;color:#DC2626">📝</div><div class="activity-content"><div class="activity-title">Review overdue — Alex Kumar</div><div class="activity-time">Readiness only 40% · 2 check-ins missed</div></div><button class="btn btn-primary btn-sm" style="flex-shrink:0;margin-top:2px">Schedule</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">Team goal completion</div></div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+        <div><div class="flex justify-between mb-4"><span style="font-size:13px;font-weight:500">John Doe</span><span style="font-size:13px;color:var(--text-muted)">75%</span></div><div class="progress-bar-wrap"><div class="progress-bar blue" style="width:75%"></div></div></div>
+        <div><div class="flex justify-between mb-4"><span style="font-size:13px;font-weight:500">Emma Brown</span><span style="font-size:13px;color:var(--text-muted)">68%</span></div><div class="progress-bar-wrap"><div class="progress-bar blue" style="width:68%"></div></div></div>
+        <div><div class="flex justify-between mb-4"><span style="font-size:13px;font-weight:500">Mike Chen</span><span style="font-size:13px;color:var(--text-muted)">55%</span></div><div class="progress-bar-wrap"><div class="progress-bar orange" style="width:55%"></div></div></div>
+        <div><div class="flex justify-between mb-4"><span style="font-size:13px;font-weight:500">Alex Kumar</span><span style="font-size:13px;color:var(--text-muted)">30%</span></div><div class="progress-bar-wrap"><div class="progress-bar" style="width:30%;background:var(--danger)"></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- M: Team -->
+<div class="page" id="page-mgr-team">
+  <div class="page-header flex justify-between items-center">
+    <div><div class="page-title">Team management</div><div class="page-desc">Engineering team · 4 members</div></div>
+    <button class="btn btn-primary" onclick="openModal('createGoalModal')">+ Assign goal</button>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Employee</th><th>Role</th><th>Goals</th><th>Readiness</th><th>Feedback given</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr><td><div class="flex items-center gap-8"><div style="width:32px;height:32px;border-radius:50%;background:#EFF6FF;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">JD</div>John Doe</div></td><td>Sr. Software Engineer</td><td>4 / 4</td><td><span class="badge green">87%</span></td><td>4</td><td><span class="badge green">Ready</span></td><td><button class="btn btn-ghost btn-sm" onclick="navigateTo('mgr-employee-detail')">Open →</button></td></tr>
+          <tr><td><div class="flex items-center gap-8"><div style="width:32px;height:32px;border-radius:50%;background:#F0FDF4;color:#16A34A;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">MC</div>Mike Chen</div></td><td>Software Engineer</td><td>3 / 4</td><td><span class="badge orange">70%</span></td><td>2</td><td><span class="badge orange">In progress</span></td><td><button class="btn btn-ghost btn-sm">Open →</button></td></tr>
+          <tr><td><div class="flex items-center gap-8"><div style="width:32px;height:32px;border-radius:50%;background:#FFF7ED;color:#C2410C;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">AK</div>Alex Kumar</div></td><td>Junior Engineer</td><td>2 / 4</td><td><span class="badge red">40%</span></td><td>1</td><td><span class="badge red">Needs attention</span></td><td><button class="btn btn-ghost btn-sm">Open →</button></td></tr>
+          <tr><td><div class="flex items-center gap-8"><div style="width:32px;height:32px;border-radius:50%;background:#F5F3FF;color:#7C3AED;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">EB</div>Emma Brown</div></td><td>Senior Engineer</td><td>4 / 4</td><td><span class="badge blue">82%</span></td><td>3</td><td><span class="badge blue">Review pending</span></td><td><button class="btn btn-ghost btn-sm">Open →</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- M: Employee Detail -->
+<div class="page" id="page-mgr-employee-detail">
+  <div class="breadcrumb"><a onclick="navigateTo('mgr-team')">Team</a><span class="breadcrumb-sep">›</span><span>John Doe</span></div>
+  <div class="profile-header">
+    <div class="profile-avatar" style="background:#EFF6FF;color:#2563EB;font-size:20px">JD</div>
+    <div class="profile-info">
+      <div class="profile-name">John Doe</div>
+      <div class="profile-role">Senior Software Engineer · Direct report</div>
+      <div class="profile-meta">
+        <div class="profile-meta-item">📅 At company since Jan 2023</div>
+        <div class="profile-meta-item">🏆 6 achievements this cycle</div>
+        <div class="profile-meta-item">📊 87% review readiness</div>
+      </div>
+    </div>
+    <div class="profile-actions">
+      <button class="btn btn-secondary btn-sm" onclick="openModal('feedbackModal')">Give feedback</button>
+      <button class="btn btn-primary btn-sm" onclick="navigateTo('mgr-review')">Open review</button>
+    </div>
+  </div>
+  <div class="two-col">
+    <div>
+      <div class="section-header mb-12"><div class="section-title">Goals</div></div>
+      <div style="display:flex;flex-direction:column;gap:10px mb-16">
+        <div class="goal-card" style="cursor:default">
+          <div class="goal-card-header"><div class="goal-title">Reduce AWS infrastructure costs by 30%</div><span class="badge green">On track</span></div>
+          <div class="progress-bar-wrap"><div class="progress-bar blue" style="width:75%"></div></div>
+          <div class="progress-label"><span>75%</span><span>Dec 2026</span></div>
+        </div>
+        <div class="goal-card" style="cursor:default;margin-top:10px">
+          <div class="goal-card-header"><div class="goal-title">Ship mobile SDK v2.0</div><span class="badge orange">At risk</span></div>
+          <div class="progress-bar-wrap"><div class="progress-bar orange" style="width:55%"></div></div>
+          <div class="progress-label"><span>55%</span><span>Aug 2026</span></div>
+        </div>
+      </div>
+      <div class="section-header mt-16 mb-12"><div class="section-title">Recent feedback from me</div><button class="btn btn-primary btn-sm" onclick="openModal('feedbackModal')">+ Add feedback</button></div>
+      <div class="feedback-card">
+        <div class="feedback-meta"><span class="badge green">Positive</span><span style="font-size:12px;color:var(--text-muted)">3 days ago</span></div>
+        <div class="feedback-text">"John consistently delivers high-quality work and has shown exceptional ownership on the infrastructure cost reduction project."</div>
+      </div>
+    </div>
+    <div>
+      <div class="readiness-widget mb-14">
+        <div class="readiness-score">
+          <div class="readiness-circle">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <circle class="ring-track" cx="40" cy="40" r="33"/>
+              <circle class="ring-fill" cx="40" cy="40" r="33" stroke="var(--primary)" stroke-dasharray="207.3" stroke-dashoffset="26.9"/>
+            </svg>
+            <div class="score-text">87%</div>
+          </div>
+          <div class="readiness-details">
+            <div class="readiness-label">Review readiness</div>
+            <div class="readiness-sub">Ready for review</div>
+          </div>
+        </div>
+        <div class="readiness-items">
+          <div class="readiness-item"><div class="readiness-check pass">✓</div>Goals tracked</div>
+          <div class="readiness-item"><div class="readiness-check pass">✓</div>Feedback given</div>
+          <div class="readiness-item"><div class="readiness-check pass">✓</div>Achievements verified</div>
+          <div class="readiness-item"><div class="readiness-check fail">–</div>Check-ins pending</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-header-title">Timeline snapshot</div><button class="btn btn-ghost btn-sm" onclick="navigateTo('emp-timeline')">Full timeline →</button></div>
+        <div class="card-body" style="padding:12px 14px">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="flex items-center gap-10"><span class="badge green">Achievement</span><span style="font-size:13px">API latency reduced 47%</span></div>
+            <div class="flex items-center gap-10"><span class="badge blue">Feedback</span><span style="font-size:13px">Positive — delivery quality</span></div>
+            <div class="flex items-center gap-10"><span class="badge orange">Milestone</span><span style="font-size:13px">Phase 2 migration complete</span></div>
+            <div class="flex items-center gap-10"><span class="badge gray">Progress</span><span style="font-size:13px">AWS goal 75%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- M: Goals -->
+<div class="page" id="page-mgr-goals">
+  <div class="page-header flex justify-between items-center">
+    <div><div class="page-title">Goal management</div><div class="page-desc">Create, assign, and track goals across your team</div></div>
+    <button class="btn btn-primary" onclick="openModal('createGoalModal')">+ Create goal</button>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Goal</th><th>Assigned to</th><th>Category</th><th>Weight</th><th>Progress</th><th>Status</th><th>Due</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:500">Reduce AWS costs by 30%</td><td>John Doe</td><td><span class="tag">Cost</span></td><td>30%</td><td><div style="display:flex;align-items:center;gap:8px"><div class="progress-bar-wrap" style="flex:1;min-width:60px"><div class="progress-bar blue" style="width:75%"></div></div><span style="font-size:12px;color:var(--text-muted)">75%</span></div></td><td><span class="badge green">On track</span></td><td>Dec 2026</td></tr>
+          <tr><td style="font-weight:500">Ship mobile SDK v2.0</td><td>John Doe</td><td><span class="tag">Product</span></td><td>25%</td><td><div style="display:flex;align-items:center;gap:8px"><div class="progress-bar-wrap" style="flex:1;min-width:60px"><div class="progress-bar orange" style="width:55%"></div></div><span style="font-size:12px;color:var(--text-muted)">55%</span></div></td><td><span class="badge orange">At risk</span></td><td>Aug 2026</td></tr>
+          <tr><td style="font-weight:500">Complete backend refactor</td><td>Mike Chen</td><td><span class="tag">Technical</span></td><td>40%</td><td><div style="display:flex;align-items:center;gap:8px"><div class="progress-bar-wrap" style="flex:1;min-width:60px"><div class="progress-bar blue" style="width:60%"></div></div><span style="font-size:12px;color:var(--text-muted)">60%</span></div></td><td><span class="badge blue">In progress</span></td><td>Oct 2026</td></tr>
+          <tr><td style="font-weight:500">Onboarding docs v3</td><td>Alex Kumar</td><td><span class="tag">Documentation</span></td><td>20%</td><td><div style="display:flex;align-items:center;gap:8px"><div class="progress-bar-wrap" style="flex:1;min-width:60px"><div class="progress-bar" style="width:25%;background:var(--danger)"></div></div><span style="font-size:12px;color:var(--text-muted)">25%</span></div></td><td><span class="badge red">Behind</span></td><td>Jul 2026</td></tr>
+          <tr><td style="font-weight:500">Lead design system audit</td><td>Emma Brown</td><td><span class="tag">Leadership</span></td><td>25%</td><td><div style="display:flex;align-items:center;gap:8px"><div class="progress-bar-wrap" style="flex:1;min-width:60px"><div class="progress-bar green" style="width:80%"></div></div><span style="font-size:12px;color:var(--text-muted)">80%</span></div></td><td><span class="badge green">On track</span></td><td>Nov 2026</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- M: Review Studio -->
+<div class="page" id="page-mgr-review">
+  <div class="page-header">
+    <div class="flex items-center gap-12 mb-4">
+      <div class="profile-avatar" style="width:40px;height:40px;font-size:14px;background:#EFF6FF;color:#2563EB">JD</div>
+      <div>
+        <div class="page-title">Review studio — John Doe</div>
+        <div class="page-desc">Q2 2026 performance review · Senior Software Engineer</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn btn-secondary">Save draft</button>
+        <button class="btn btn-primary" onclick="showReviewSuccess()">Submit review</button>
+      </div>
+    </div>
+    <div class="alert success" style="margin-top:12px">✦ Review content was generated from 18 performance evidence events collected between Jan–Jun 2026. Edit any section before submitting.</div>
+  </div>
+  <div class="review-studio">
+    <div class="review-main">
+      <div class="review-section">
+        <div class="review-section-header"><span class="ai-badge">✦ AI Generated</span><div class="review-section-title" style="margin-left:8px">Performance summary</div></div>
+        <div class="review-section-body">
+          <div class="ai-text" contenteditable="true" style="outline:none;border:1px dashed transparent;border-radius:6px;padding:8px;transition:border 0.15s" onmouseenter="this.style.borderColor='var(--border)'" onmouseleave="this.style.borderColor='transparent'">John has had a strong Q1–Q2 2026, demonstrating significant technical impact through infrastructure optimization work that has yielded measurable business outcomes. His reduction of API latency by 47% and projected $85K in annual AWS savings reflect both technical depth and commercial awareness. He took full ownership of a high-stakes payment migration with zero incidents, which speaks to his operational discipline. Growth areas include documentation practices and cross-team async communication, which he has acknowledged and begun addressing. Overall, John is performing at the Exceeds Expectations level and is on a strong trajectory for senior+ roles.</div>
+        </div>
+      </div>
+      <div class="review-section">
+        <div class="review-section-header"><span class="ai-badge">✦ AI Generated</span><div class="review-section-title" style="margin-left:8px">Strengths · from evidence</div></div>
+        <div class="review-section-body">
+          <div class="strength-item"><div class="str-icon green">✓</div><div class="str-text"><strong>Technical execution</strong> — 47% latency reduction, $85K savings projected, zero-incident payment migration. Results are documented and verified.</div></div>
+          <div class="strength-item"><div class="str-icon green">✓</div><div class="str-text"><strong>Full ownership</strong> — Leads infrastructure projects end-to-end, including stakeholder coordination and post-launch monitoring without prompting.</div></div>
+          <div class="strength-item"><div class="str-icon green">✓</div><div class="str-text"><strong>Stakeholder communication</strong> — Translates technical constraints into business language; Finance confirmed AWS savings projections independently.</div></div>
+          <div class="strength-item"><div class="str-icon green">✓</div><div class="str-text"><strong>Early mentorship</strong> — Proactively onboarded 2 junior engineers, created runbooks, shipped their first features in 30 days.</div></div>
+        </div>
+      </div>
+      <div class="review-section">
+        <div class="review-section-header"><span class="ai-badge">✦ AI Generated</span><div class="review-section-title" style="margin-left:8px">Areas for growth</div></div>
+        <div class="review-section-body">
+          <div class="improvement-item"><div class="str-icon orange">→</div><div class="str-text"><strong>Documentation</strong> — Flagged by manager in feedback (Mar 20). No ADRs produced for payment migration or infrastructure refactor. Action: 1 ADR per major change from Q3.</div></div>
+          <div class="improvement-item"><div class="str-icon orange">→</div><div class="str-text"><strong>Async status updates</strong> — SDK project timeline has had 2 missed updates; stakeholders were unaware of risks until retrospective. Action: weekly async update in Slack starting Q3.</div></div>
+        </div>
+      </div>
+      <div class="review-section">
+        <div class="review-section-header"><div class="review-section-title">Manager comments</div><span class="badge gray" style="margin-left:auto">Required</span></div>
+        <div class="review-section-body">
+          <textarea class="final-comment" placeholder="Add your personal commentary, context, and qualitative observations not captured in the AI summary...">John has consistently been one of the most reliable members of the engineering team. What the data doesn't capture is how he shows up in difficult situations — calm under pressure, always willing to take on ambiguous problems. I'm excited about his trajectory and believe he's ready for a staff-level scope in H2 2026.</textarea>
+        </div>
+      </div>
+    </div>
+    <div class="review-sidebar-panel">
+      <div class="suggested-rating-card">
+        <div class="suggested-rating-label">AI suggested rating</div>
+        <div class="suggested-rating-value">Exceeds</div>
+        <div style="font-size:13px;color:var(--text-secondary)">Based on 18 evidence events and 87% readiness</div>
+      </div>
+      <div class="review-section">
+        <div class="review-section-header"><div class="review-section-title">Final rating</div></div>
+        <div class="review-section-body">
+          <div class="rating-select">
+            <div class="rating-option" onclick="selectRating(this)">Below expectations</div>
+            <div class="rating-option" onclick="selectRating(this)">Meets expectations</div>
+            <div class="rating-option exceeds selected" onclick="selectRating(this)">Exceeds expectations</div>
+            <div class="rating-option" onclick="selectRating(this)">Outstanding</div>
+          </div>
+        </div>
+      </div>
+      <div class="review-section">
+        <div class="review-section-header"><div class="review-section-title">Evidence summary</div></div>
+        <div class="review-section-body" style="display:flex;flex-direction:column;gap:8px">
+          <div class="flex justify-between items-center"><span style="font-size:13px">Achievements</span><span class="badge green">6</span></div>
+          <div class="flex justify-between items-center"><span style="font-size:13px">Feedback events</span><span class="badge blue">4</span></div>
+          <div class="flex justify-between items-center"><span style="font-size:13px">Goal completion</span><span class="badge gray">75% avg</span></div>
+          <div class="flex justify-between items-center"><span style="font-size:13px">Milestones hit</span><span class="badge orange">2</span></div>
+        </div>
+      </div>
+      <div class="review-section">
+        <div class="review-section-header"><div class="review-section-title">Review readiness</div></div>
+        <div class="review-section-body">
+          <div class="flex items-center gap-12 mb-12">
+            <div style="font-size:28px;font-weight:700;color:var(--primary)">87%</div>
+            <div><div style="font-size:13px;font-weight:500">Ready to review</div><div style="font-size:12px;color:var(--text-muted)">1 check-in missing</div></div>
+          </div>
+          <div class="progress-bar-wrap"><div class="progress-bar blue" style="width:87%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= HR PAGES ======= -->
+<!-- HR: Dashboard -->
+<div class="page" id="page-hr-dashboard">
+  <div class="page-header">
+    <div class="flex justify-between items-center">
+      <div><div class="page-title">HR overview</div><div class="page-desc">Q2 2026 performance cycle · Engineering org · 24 employees</div></div>
+      <div class="flex gap-8">
+        <button class="btn btn-secondary">Export report</button>
+        <button class="btn btn-primary">Send reminders</button>
+      </div>
+    </div>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total employees</div>
+      <div class="kpi-value">24</div>
+      <div class="kpi-sub">3 departments</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Review completion</div>
+      <div class="kpi-value" style="color:var(--warning)">21%</div>
+      <div class="kpi-sub"><span class="kpi-delta neutral">→</span> Cycle ends Aug 1</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg goal completion</div>
+      <div class="kpi-value">58%</div>
+      <div class="kpi-sub"><span class="kpi-delta up">↑ 11%</span> vs Q1</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg readiness</div>
+      <div class="kpi-value">70%</div>
+      <div class="kpi-sub"><span class="kpi-delta up">↑ 9%</span> this month</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Manager participation</div>
+      <div class="kpi-value" style="color:var(--danger)">67%</div>
+      <div class="kpi-sub">2 of 3 managers active</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">At risk employees</div>
+      <div class="kpi-value" style="color:var(--danger)">4</div>
+      <div class="kpi-sub">Below 50% readiness</div>
+    </div>
+  </div>
+  <div class="analytics-grid mb-20">
+    <div class="chart-card">
+      <div class="chart-title">Review readiness distribution</div>
+      <div style="position:relative;height:220px"><canvas id="hrReadinessChart" role="img" aria-label="Bar chart showing review readiness by employee"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Goal completion by department</div>
+      <div style="position:relative;height:220px"><canvas id="hrGoalChart" role="img" aria-label="Horizontal bar chart of goal completion by department"></canvas></div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="chart-card">
+      <div class="chart-title">Review completion over time</div>
+      <div style="position:relative;height:200px"><canvas id="hrCompletionChart" role="img" aria-label="Line chart showing review completion over time"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Feedback distribution</div>
+      <div style="position:relative;height:200px"><canvas id="hrFeedbackChart" role="img" aria-label="Doughnut chart showing feedback types"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- HR: Employee overview -->
+<div class="page" id="page-hr-employees">
+  <div class="page-header flex justify-between items-center">
+    <div><div class="page-title">Employee overview</div><div class="page-desc">All employees in the Q2 2026 review cycle</div></div>
+    <div class="flex gap-8"><button class="btn btn-secondary">Filter</button><button class="btn btn-ghost">Export CSV</button></div>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Employee</th><th>Manager</th><th>Department</th><th>Goals</th><th>Readiness</th><th>Review status</th><th>Flag</th></tr></thead>
+        <tbody>
+          <tr><td><div class="flex items-center gap-8"><div style="width:30px;height:30px;border-radius:50%;background:#EFF6FF;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600">JD</div>John Doe</div></td><td>Sarah Wilson</td><td>Engineering</td><td>4 / 4</td><td><span class="badge green">87%</span></td><td><span class="badge blue">In review</span></td><td>—</td></tr>
+          <tr><td><div class="flex items-center gap-8"><div style="width:30px;height:30px;border-radius:50%;background:#F0FDF4;color:#16A34A;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600">MC</div>Mike Chen</div></td><td>Sarah Wilson</td><td>Engineering</td><td>3 / 4</td><td><span class="badge orange">70%</span></td><td><span class="badge gray">Not started</span></td><td>—</td></tr>
+          <tr><td><div class="flex items-center gap-8"><div style="width:30px;height:30px;border-radius:50%;background:#FFF7ED;color:#C2410C;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600">AK</div>Alex Kumar</div></td><td>Sarah Wilson</td><td>Engineering</td><td>2 / 4</td><td><span class="badge red">40%</span></td><td><span class="badge gray">Not started</span></td><td><span class="badge red">⚠ Low readiness</span></td></tr>
+          <tr><td><div class="flex items-center gap-8"><div style="width:30px;height:30px;border-radius:50%;background:#F5F3FF;color:#7C3AED;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600">EB</div>Emma Brown</div></td><td>Sarah Wilson</td><td>Engineering</td><td>4 / 4</td><td><span class="badge blue">82%</span></td><td><span class="badge gray">Not started</span></td><td>—</td></tr>
+          <tr><td><div class="flex items-center gap-8"><div style="width:30px;height:30px;border-radius:50%;background:#F1F5F9;color:#475569;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600">RL</div>Rachel Lee</div></td><td>Tom Park</td><td>Product</td><td>3 / 3</td><td><span class="badge green">91%</span></td><td><span class="badge green">Completed</span></td><td>—</td></tr>
+          <tr><td><div class="flex items-center gap-8"><div style="width:30px;height:30px;border-radius:50%;background:#F1F5F9;color:#475569;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600">DW</div>David Wang</div></td><td>Tom Park</td><td>Product</td><td>2 / 3</td><td><span class="badge red">35%</span></td><td><span class="badge gray">Not started</span></td><td><span class="badge red">⚠ No feedback</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- HR: Analytics -->
+<div class="page" id="page-hr-analytics">
+  <div class="page-header"><div class="page-title">Performance analytics</div><div class="page-desc">Company-wide performance data for Q2 2026</div></div>
+  <div class="analytics-grid mb-16">
+    <div class="chart-card">
+      <div class="chart-title">Goal completion trend</div>
+      <div style="position:relative;height:220px"><canvas id="hrTrendChart" role="img" aria-label="Line chart of goal completion trend"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Readiness by team</div>
+      <div style="position:relative;height:220px"><canvas id="hrTeamReadinessChart" role="img" aria-label="Bar chart of readiness by team"></canvas></div>
+    </div>
+  </div>
+  <div class="analytics-grid">
+    <div class="chart-card">
+      <div class="chart-title">Rating distribution (projected)</div>
+      <div style="position:relative;height:220px"><canvas id="hrRatingChart" role="img" aria-label="Bar chart of projected rating distribution"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Manager feedback activity</div>
+      <div style="position:relative;height:220px"><canvas id="hrMgrChart" role="img" aria-label="Bar chart of manager feedback activity"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- HR: Health Dashboard -->
+<div class="page" id="page-hr-health">
+  <div class="page-header"><div class="page-title">Performance health dashboard</div><div class="page-desc">Employees and teams that need attention before review deadline</div></div>
+  <div class="health-grid mb-20">
+    <div class="health-card">
+      <div class="health-card-label" style="color:var(--danger)">⚠ No feedback received</div>
+      <div class="health-list">
+        <div class="health-list-item"><div class="name">David Wang</div><div class="meta">Product · 0 feedback</div></div>
+        <div class="health-list-item"><div class="name">Alex Kumar</div><div class="meta">Engineering · 1 feedback</div></div>
+      </div>
+    </div>
+    <div class="health-card">
+      <div class="health-card-label" style="color:var(--warning)">🔶 Low readiness (&lt;50%)</div>
+      <div class="health-list">
+        <div class="health-list-item"><div class="name">David Wang</div><div class="meta">Readiness 35%</div></div>
+        <div class="health-list-item"><div class="name">Alex Kumar</div><div class="meta">Readiness 40%</div></div>
+      </div>
+    </div>
+    <div class="health-card">
+      <div class="health-card-label" style="color:var(--danger)">⏰ Reviews not started</div>
+      <div class="health-list">
+        <div class="health-list-item"><div class="name">Tom Park</div><div class="meta">Manager · 5 reports pending</div></div>
+        <div class="health-list-item"><div class="name">Mike Chen</div><div class="meta">Review not initiated</div></div>
+        <div class="health-list-item"><div class="name">Emma Brown</div><div class="meta">Review not initiated</div></div>
+      </div>
+    </div>
+    <div class="health-card">
+      <div class="health-card-label" style="color:var(--success)">🏆 Top performers</div>
+      <div class="health-list">
+        <div class="health-list-item"><div class="name">Rachel Lee</div><div class="meta">Readiness 91% · Outstanding</div></div>
+        <div class="health-list-item"><div class="name">John Doe</div><div class="meta">Readiness 87% · Exceeds</div></div>
+        <div class="health-list-item"><div class="name">Emma Brown</div><div class="meta">Readiness 82% · On track</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-header-title">Teams requiring attention</div></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Team</th><th>Manager</th><th>Avg readiness</th><th>Reviews done</th><th>Employees flagged</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>Product</td><td>Tom Park</td><td><span class="badge red">38%</span></td><td>1 / 6</td><td>2</td><td><button class="btn btn-danger btn-sm">Send reminder</button></td></tr>
+          <tr><td>Engineering</td><td>Sarah Wilson</td><td><span class="badge orange">70%</span></td><td>1 / 4</td><td>1</td><td><button class="btn btn-secondary btn-sm">View details</button></td></tr>
+          <tr><td>Design</td><td>Maria Santos</td><td><span class="badge green">84%</span></td><td>3 / 4</td><td>0</td><td><button class="btn btn-ghost btn-sm">No action needed</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== WORKLOAD INTELLIGENCE PAGES (rendered dynamically) ===== -->
+<div class="page" id="page-emp-capacity"></div>
+<div class="page" id="page-emp-request-goal"></div>
+<div class="page" id="page-mgr-capacity"></div>
+<div class="page" id="page-mgr-requests"></div>
+<div class="page" id="page-mgr-assign"></div>
+<div class="page" id="page-hr-workload"></div>
+
+</main>
+</div>
+</div>
+
+<!-- MODAL: Achievement -->
+<div class="modal-overlay" id="achievementModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Log achievement</div><button class="modal-close" onclick="closeModal('achievementModal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Achievement title</label><input class="form-input" placeholder="e.g. Reduced API latency by 47%"/></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" placeholder="What did you accomplish? Include metrics and impact..."></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Category</label><select class="form-select"><option>Technical impact</option><option>Cost savings</option><option>Delivery</option><option>Leadership</option><option>Collaboration</option></select></div>
+        <div class="form-group"><label class="form-label">Related goal</label><select class="form-select"><option>AWS cost reduction</option><option>Mobile SDK v2.0</option><option>System reliability</option><option>Mentorship</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('achievementModal')">Cancel</button><button class="btn btn-primary" onclick="closeModal('achievementModal')">Save achievement</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Create goal -->
+<div class="modal-overlay" id="createGoalModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Create goal</div><button class="modal-close" onclick="closeModal('createGoalModal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Goal title</label><input class="form-input" placeholder="e.g. Reduce AWS costs by 30%"/></div>
+      <div class="form-group"><label class="form-label">Description & success metric</label><textarea class="form-textarea" placeholder="Define what success looks like and how it will be measured..."></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Assigned to</label><select class="form-select"><option>John Doe</option><option>Mike Chen</option><option>Alex Kumar</option><option>Emma Brown</option></select></div>
+        <div class="form-group"><label class="form-label">Weight</label><select class="form-select"><option>10%</option><option>20%</option><option>25%</option><option>30%</option><option>40%</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Category</label><select class="form-select"><option>Technical</option><option>Product</option><option>Leadership</option><option>Cost</option><option>Growth</option></select></div>
+        <div class="form-group"><label class="form-label">Due date</label><input class="form-input" type="date" value="2026-12-31"/></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('createGoalModal')">Cancel</button><button class="btn btn-primary" onclick="closeModal('createGoalModal')">Create &amp; assign</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Feedback -->
+<div class="modal-overlay" id="feedbackModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Give feedback — John Doe</div><button class="modal-close" onclick="closeModal('feedbackModal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Feedback type</label><select class="form-select"><option>Positive</option><option>Growth area</option><option>Recognition</option><option>General</option></select></div>
+      <div class="form-group"><label class="form-label">Feedback</label><textarea class="form-textarea" style="min-height:120px" placeholder="Share specific, evidence-based feedback..."></textarea></div>
+      <div class="form-group"><label class="form-label">Related goal (optional)</label><select class="form-select"><option>— None —</option><option>AWS cost reduction</option><option>Mobile SDK v2.0</option><option>System reliability</option></select></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('feedbackModal')">Cancel</button><button class="btn btn-primary" onclick="closeModal('feedbackModal')">Submit feedback</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Overload warning -->
+<div class="modal-overlay" id="overloadModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header"><div class="modal-title">⚠️ Overload warning</div><button class="modal-close" onclick="closeModal('overloadModal')">×</button></div>
+    <div class="modal-body">
+      <div class="over-stat"><span class="k">Employee</span><span class="v" id="ov-emp">—</span></div>
+      <div class="over-stat"><span class="k">Current workload</span><span class="v" id="ov-cur">—</span></div>
+      <div class="over-arrow">↓</div>
+      <div class="over-stat"><span class="k">After assignment</span><span class="v" id="ov-after">—</span></div>
+      <div class="over-stat"><span class="k">Status</span><span class="v" style="color:var(--danger)">OVERLOADED</span></div>
+      <div class="over-rec"><span style="font-size:16px;flex-shrink:0">🧭</span><div id="ov-rec" style="font-size:13px;color:var(--text);line-height:1.5"></div></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('overloadModal')">Cancel</button><button class="btn btn-danger" onclick="UPMSui.commitAssign()">Assign anyway</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Modify proposal -->
+<div class="modal-overlay" id="modifyModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Modify &amp; approve request</div><button class="modal-close" onclick="closeModal('modifyModal')">×</button></div>
+    <div class="modal-body">
+      <div class="alert info" style="margin-bottom:16px">Adjust scope before this becomes an active goal: <b id="mod-title">—</b></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="mod-prio"><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select></div>
+        <div class="form-group"><label class="form-label">Difficulty</label><select class="form-select" id="mod-diff"><option>Easy</option><option>Medium</option><option>Hard</option><option>Critical</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Estimated effort (hours)</label><input class="form-input" id="mod-hours" type="number" min="1"/></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modifyModal')">Cancel</button><button class="btn btn-primary" onclick="UPMSui.saveModify()">Approve with changes</button></div>
+  </div>
+</div>
+
+<script>
+const USERS = {
+  employee:{name:'John Doe',initials:'JD',role:'Employee',color:'#2563EB',bg:'#EFF6FF',indicator:'emp-indicator',context:'Employee workspace',nav:[
+    {id:'emp-dashboard',label:'Dashboard',icon:'📊'},{id:'emp-workspace',label:'My workspace',icon:'🏠'},{id:'emp-timeline',label:'Performance timeline',icon:'⏱'}
+  ]},
+  manager:{name:'Sarah Wilson',initials:'SW',role:'Manager',color:'#16A34A',bg:'#F0FDF4',indicator:'mgr-indicator',context:'Manager hub',nav:[
+    {id:'mgr-dashboard',label:'Team overview',icon:'📊'},{id:'mgr-team',label:'My team',icon:'👥'},{id:'mgr-goals',label:'Goal management',icon:'🎯'},{id:'mgr-review',label:'Review studio',icon:'✍️'}
+  ]},
+  hr:{name:'HR Admin',initials:'HR',role:'HR',color:'#7C3AED',bg:'#F5F3FF',indicator:'hr-indicator',context:'HR command center',nav:[
+    {id:'hr-dashboard',label:'HR dashboard',icon:'📊'},{id:'hr-employees',label:'Employee overview',icon:'👥'},{id:'hr-analytics',label:'Analytics',icon:'📈'},{id:'hr-health',label:'Health dashboard',icon:'❤️'}
+  ]}
+};
+let currentUser='employee';
+let activePageId='emp-dashboard';
+let empTab='goals';
+let hrChartsInit=false, empChartsInit=false, mgrChartsInit=false;
+
+function toggleDropdown(){
+  const dd=document.getElementById('accountDropdown');
+  dd.classList.toggle('open');
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.account-switcher'))document.getElementById('accountDropdown').classList.remove('open');
+});
+
+function switchUser(u){
+  document.getElementById('accountDropdown').classList.remove('open');
+  if(u===currentUser)return;
+  currentUser=u;
+  const user=USERS[u];
+  document.getElementById('topAvatar').textContent=user.initials;
+  document.getElementById('topAvatar').style.background=user.bg;
+  document.getElementById('topAvatar').style.color=user.color;
+  document.getElementById('topName').textContent=user.name;
+  document.getElementById('topRoleBadge').textContent=user.role;
+  document.getElementById('topRoleBadge').style.color=user.color;
+  document.getElementById('topRoleBadge').style.background=user.bg;
+  document.getElementById('topbarContext').textContent=user.context;
+  const pi=document.getElementById('personaIndicator');
+  pi.className='persona-indicator '+user.indicator;
+  document.querySelectorAll('.account-option').forEach((opt,i)=>{
+    opt.classList.toggle('selected',(['employee','manager','hr'][i])===u);
+  });
+  renderSidebar();
+  navigateTo(user.nav[0].id);
+}
+
+function renderSidebar(){
+  const user=USERS[currentUser];
+  const nav=user.nav;
+  const s=document.getElementById('sidebar');
+  let html=`<div class="sidebar-section"><div class="sidebar-label">Navigation</div>`;
+  nav.forEach(n=>{
+    const active=activePageId===n.id?'active':'';
+    html+=`<div class="nav-item ${active}" onclick="navigateTo('${n.id}')">${n.icon}&nbsp;&nbsp;${n.label}</div>`;
+  });
+  html+=`</div>`;
+  if(currentUser==='manager'){
+    html+=`<div class="sidebar-section"><div class="sidebar-label">Quick actions</div>
+    <div class="nav-item" onclick="openModal('createGoalModal')">➕&nbsp;&nbsp;Create goal</div>
+    <div class="nav-item" onclick="openModal('feedbackModal')">💬&nbsp;&nbsp;Give feedback</div></div>`;
+  }
+  if(currentUser==='employee'){
+    html+=`<div class="sidebar-section"><div class="sidebar-label">Quick actions</div>
+    <div class="nav-item" onclick="openModal('achievementModal')">🏆&nbsp;&nbsp;Log achievement</div></div>`;
+  }
+  s.innerHTML=html;
+}
+
+function navigateTo(pageId){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg=document.getElementById('page-'+pageId);
+  if(pg)pg.classList.add('active');
+  activePageId=pageId;
+  renderSidebar();
+  // init charts lazily
+  if(pageId==='emp-dashboard'&&!empChartsInit){empChartsInit=true;initEmpCharts();}
+  if((pageId==='hr-dashboard')&&!hrChartsInit){hrChartsInit=true;initHRCharts();}
+  if(pageId==='hr-analytics'){setTimeout(initHRAnalyticsCharts,100);}
+}
+
+function switchTab(prefix,tab){
+  document.querySelectorAll(`#emp-goals,#emp-achievements,#emp-feedback,#emp-review`).forEach(p=>p.classList.remove('active'));
+  document.getElementById(`emp-${tab}`)?.classList.add('active');
+  const tabs=document.getElementById('empWorkspaceTabs');
+  if(tabs)tabs.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+});
+
+function selectRating(el){
+  document.querySelectorAll('.rating-option').forEach(o=>o.classList.remove('selected','exceeds'));
+  el.classList.add('selected');
+}
+
+function showReviewSuccess(){
+  alert('Review submitted successfully! John Doe has been notified and HR will receive the final review within 24 hours.');
+}
+function showNotif(){alert('No new notifications.');}
+function showHelp(){alert('UPMS Help Center — performance.docs.internal');}
+
+// CHARTS
+function initEmpCharts(){
+  const cc1=document.getElementById('empGoalChart');
+  const cc2=document.getElementById('empActivityChart');
+  if(!cc1||!cc2)return;
+  new Chart(cc1,{type:'line',data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],datasets:[{label:'AWS cost goal',data:[10,25,40,55,68,75],borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,0.08)',tension:0.4,fill:true,pointBackgroundColor:'#2563EB',pointRadius:4,pointHoverRadius:6},{label:'SDK goal',data:[0,10,20,30,42,55],borderColor:'#F59E0B',backgroundColor:'rgba(245,158,11,0.06)',tension:0.4,fill:true,pointBackgroundColor:'#F59E0B',pointRadius:4,pointHoverRadius:6},{label:'Reliability',data:[80,82,85,86,88,90],borderColor:'#22C55E',backgroundColor:'rgba(34,197,94,0.06)',tension:0.4,fill:true,pointBackgroundColor:'#22C55E',pointRadius:4,pointHoverRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,grid:{color:'#F1F5F9'},ticks:{color:'#94A3B8',font:{size:11}}},x:{grid:{display:false},ticks:{color:'#94A3B8',font:{size:11}}}}}});
+  new Chart(cc2,{type:'bar',data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],datasets:[{label:'Events',data:[2,4,3,5,6,4],backgroundColor:'#2563EB',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#F1F5F9'},ticks:{color:'#94A3B8',font:{size:11}}},x:{grid:{display:false},ticks:{color:'#94A3B8',font:{size:11}}}}}});
+}
+
+function initHRCharts(){
+  const c1=document.getElementById('hrReadinessChart');
+  const c2=document.getElementById('hrGoalChart');
+  const c3=document.getElementById('hrCompletionChart');
+  const c4=document.getElementById('hrFeedbackChart');
+  if(c1)new Chart(c1,{type:'bar',data:{labels:['John D.','Emma B.','Mike C.','Alex K.','Rachel L.','David W.'],datasets:[{data:[87,82,70,40,91,35],backgroundColor:['#22C55E','#2563EB','#F59E0B','#EF4444','#22C55E','#EF4444'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,grid:{color:'#F1F5F9'},ticks:{color:'#94A3B8',font:{size:11}}},x:{grid:{display:false},ticks:{color:'#94A3B8',font:{size:11},maxRotation:30}}}}});
+  if(c2)new Chart(c2,{type:'bar',data:{labels:['Engineering','Product','Design'],datasets:[{data:[57,48,72],backgroundColor:['#2563EB','#F59E0B','#22C55E'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{min:0,max:100,grid:{color:'#F1F5F9'},ticks:{color:'#94A3B8',font:{size:11}}},y:{grid:{display:false},ticks:{color:'#94A3B8',font:{size:11}}}}}});
+  if(c3)new Chart(c3,{type:'line',data:{labels:['Apr','May','Jun','Jul'],datasets:[{label:'Reviews completed',data:[0,5,21,40],borderColor:'#8B5CF6',backgroundColor:'rgba(139,92,246,0.08)',tension:0.4,fill:true,pointBackgroundColor:'#8B5CF6',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,grid:{color:'#F1F5F9'},ticks:{color:'#94A3B8',font:{size:11},callback:v=>v+'%'}},x:{grid:{display:false},ticks:{color:'#94A3B8',font:{size:11}}}}}});
+  if(c4)new Chart(c4,{type:'doughnut',data:{labels:['Positive','Growth area','Recognition','General'],datasets:[{data:[45,25,20,10],backgroundColor:['#22C55E','#F59E0B','#2563EB','#94A3B8'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12,boxWidth:10}}},cutout:'65%'}});
+}
+
+function initHRAnalyticsCharts(){
+  const ids=['hrTrendChart','hrTeamReadinessChart','hrRatingChart','hrMgrChart'];
+  if(document.getElementById(ids[0])._chartInst)return;
+  const c1=document.getElementById(ids[0]);
+  const c2=document.getElementById(ids[1]);
+  const c3=document.getElementById(ids[2]);
+  const c4=document.getElementById(ids[3]);
+  if(c1&&!c1._ci)new Chart(c1,{type:'line',data:{labels:['Q3\'25','Q4\'25','Q1\'26','Q2\'26'],datasets:[{label:'Goal completion',data:[42,51,57,64],borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,0.08)',tension:0.4,fill:true,pointRadius:4,pointBackgroundColor:'#2563EB'},{label:'Avg readiness',data:[35,48,61,70],borderColor:'#22C55E',backgroundColor:'rgba(34,197,94,0.06)',tension:0.4,fill:true,pointRadius:4,pointBackgroundColor:'#22C55E'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},boxWidth:10,padding:12}}},scales:{y:{min:0,max:100,grid:{color:'#F1F5F9'},ticks:{color:'#94A3B8',font:{size:11},callback:v=>v+'%'}},x:{grid:{display:false},ticks:{color:'#94A3B8',font:{size:11}}}}}});
+  if(c2&&!c2._ci)new Chart(c2,{type:'bar',data:{labels:['Engineering','Product','Design'],datasets:[{label:'Readiness',data:[70,48,84],backgroundColor:['#2563EB','#F59E0B','#22C55E'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,grid:{color:'#F1F5F9'},ticks:{color:'#94A3B8',font:{size:11}}},x:{grid:{display:false},ticks:{color:'#94A3B8',font:{size:11}}}}}});
+  if(c3&&!c3._ci)new Chart(c3,{type:'bar',data:{labels:['Below','Meets','Exceeds','Outstanding'],datasets:[{data:[2,8,11,3],backgroundColor:['#EF4444','#94A3B8','#2563EB','#22C55E'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#F1F5F9'},ticks:{color:'#94A3B8',font:{size:11}}},x:{grid:{display:false},ticks:{color:'#94A3B8',font:{size:11}}}}}});
+  if(c4&&!c4._ci)new Chart(c4,{type:'bar',data:{labels:['Sarah W.','Tom P.','Maria S.'],datasets:[{label:'Feedback given',data:[12,4,9],backgroundColor:['#2563EB','#EF4444','#22C55E'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},indexAxis:'y',scales:{x:{grid:{color:'#F1F5F9'},ticks:{color:'#94A3B8',font:{size:11}}},y:{grid:{display:false},ticks:{color:'#94A3B8',font:{size:11}}}}}});
+}
+
+// Boot
+renderSidebar();
+navigateTo('emp-dashboard');
+</script>
+<script>
+/* ============================================================
+   UPMS — WORKLOAD INTELLIGENCE + GOAL REQUESTS MODULE
+   Additive: depends only on globals from the base app
+   (USERS, currentUser, activePageId, navigateTo, renderSidebar,
+    openModal, closeModal). Exposes window.UPMSui for inline onclick.
+   ============================================================ */
+(function(){
+  "use strict";
+
+  /* ---- Config: difficulty weights (tune freely) ---- */
+  var DIFF = {
+    Easy:    {w:0.8,  badge:'green'},
+    Medium:  {w:1.0,  badge:'blue'},
+    Hard:    {w:1.25, badge:'orange'},
+    Critical:{w:1.5,  badge:'red'}
+  };
+  var PRIO = {Low:'gray', Medium:'blue', High:'orange', Critical:'red'};
+  var ACTIVE = ['Not started','In progress']; // statuses that count toward load
+
+  /* ---- Workload engine ---- */
+  function level(h){
+    if(h<=40)  return {key:'healthy', label:'Healthy',    cls:'wl-healthy', color:'#22C55E', emoji:'\uD83D\uDFE2'};
+    if(h<=70)  return {key:'busy',    label:'Busy',       cls:'wl-busy',    color:'#F59E0B', emoji:'\uD83D\uDFE1'};
+    if(h<=100) return {key:'high',    label:'High load',  cls:'wl-high',    color:'#F97316', emoji:'\uD83D\uDFE0'};
+    return            {key:'over',    label:'Overloaded', cls:'wl-over',    color:'#EF4444', emoji:'\uD83D\uDD34'};
+  }
+  function activeGoals(e){ return e.goals.filter(function(g){return ACTIVE.indexOf(g.status)>-1;}); }
+  function hours(e){ return activeGoals(e).reduce(function(s,g){return s+g.hours;},0); }
+  function strain(e){ return Math.round(activeGoals(e).reduce(function(s,g){return s+g.hours*DIFF[g.difficulty].w;},0)); }
+  function diffMix(e){ var m={Easy:0,Medium:0,Hard:0,Critical:0}; activeGoals(e).forEach(function(g){m[g.difficulty]++;}); return m; }
+  function avgDiff(e){ var order=['Easy','Medium','Hard','Critical']; var a=activeGoals(e); if(!a.length)return '\u2014'; var v=a.reduce(function(s,g){return s+order.indexOf(g.difficulty);},0)/a.length; return order[Math.round(v)]; }
+
+  /* ---- Seed data ---- */
+  var STATE = {
+    employees:[
+      {id:'jd',name:'John Doe',initials:'JD',role:'Senior Software Engineer',dept:'Engineering',color:'#2563EB',bg:'#EFF6FF',readiness:87,goals:[
+        {id:'g1',title:'Reduce AWS infrastructure costs by 30%',priority:'Critical',difficulty:'Hard',hours:40,progress:75,status:'In progress',impact:'Cut quarterly cloud spend by ~$48k',due:'30 Jul',source:'top'},
+        {id:'g2',title:'Ship mobile SDK v2.0',priority:'High',difficulty:'Critical',hours:35,progress:55,status:'In progress',impact:'Unblocks 3 partner integrations',due:'30 Aug',source:'top'},
+        {id:'g3',title:'Migrate auth service to OIDC',priority:'High',difficulty:'Hard',hours:30,progress:20,status:'In progress',impact:'Removes legacy SSO security risk',due:'15 Sep',source:'bottom'}
+      ]},
+      {id:'mc',name:'Mike Chen',initials:'MC',role:'Software Engineer',dept:'Engineering',color:'#16A34A',bg:'#F0FDF4',readiness:70,goals:[
+        {id:'g4',title:'Complete backend refactor',priority:'High',difficulty:'Medium',hours:40,progress:60,status:'In progress',impact:'30% faster API response times',due:'31 Oct',source:'top'},
+        {id:'g5',title:'Add integration test suite',priority:'Medium',difficulty:'Hard',hours:25,progress:15,status:'In progress',impact:'Cuts regression escapes by half',due:'20 Sep',source:'bottom'}
+      ]},
+      {id:'ak',name:'Alex Kumar',initials:'AK',role:'Junior Engineer',dept:'Engineering',color:'#C2410C',bg:'#FFF7ED',readiness:40,goals:[
+        {id:'g6',title:'Onboarding docs v3',priority:'Medium',difficulty:'Easy',hours:20,progress:25,status:'In progress',impact:'Halves new-hire ramp time',due:'31 Jul',source:'top'},
+        {id:'g7',title:'Fix flaky CI pipeline',priority:'Low',difficulty:'Medium',hours:15,progress:0,status:'Not started',impact:'Restores trust in green builds',due:'10 Aug',source:'top'}
+      ]},
+      {id:'eb',name:'Emma Brown',initials:'EB',role:'Senior Engineer',dept:'Engineering',color:'#7C3AED',bg:'#F5F3FF',readiness:82,goals:[
+        {id:'g8',title:'Lead design system audit',priority:'High',difficulty:'Hard',hours:30,progress:80,status:'In progress',impact:'Unifies UI across 6 products',due:'30 Nov',source:'top'},
+        {id:'g9',title:'Mentor 2 junior engineers',priority:'Medium',difficulty:'Medium',hours:20,progress:50,status:'In progress',impact:'Builds team bench strength',due:'31 Dec',source:'bottom'}
+      ]},
+      {id:'dw',name:'David Wang',initials:'DW',role:'Product Manager',dept:'Product',color:'#0891B2',bg:'#ECFEFF',readiness:35,goals:[
+        {id:'g10',title:'Q3 roadmap delivery',priority:'Critical',difficulty:'Critical',hours:50,progress:40,status:'In progress',impact:'Ships 3 flagship features',due:'30 Sep',source:'top'},
+        {id:'g11',title:'Customer discovery sprint',priority:'High',difficulty:'Hard',hours:40,progress:10,status:'In progress',impact:'De-risks 2026 bets',due:'15 Aug',source:'top'}
+      ]},
+      {id:'pn',name:'Priya Nair',initials:'PN',role:'Product Manager',dept:'Product',color:'#DB2777',bg:'#FDF2F8',readiness:58,goals:[
+        {id:'g12',title:'Launch billing v2',priority:'Critical',difficulty:'Critical',hours:60,progress:35,status:'In progress',impact:'Enables usage-based pricing',due:'31 Oct',source:'top'},
+        {id:'g13',title:'Pricing experiment framework',priority:'High',difficulty:'Hard',hours:50,progress:20,status:'In progress',impact:'Faster pricing iteration',due:'30 Nov',source:'bottom'}
+      ]},
+      {id:'rl',name:'Rachel Lee',initials:'RL',role:'Product Designer',dept:'Design',color:'#9333EA',bg:'#FAF5FF',readiness:91,goals:[
+        {id:'g14',title:'Refresh marketing site',priority:'Medium',difficulty:'Medium',hours:20,progress:70,status:'In progress',impact:'Lifts landing-page conversion',due:'20 Aug',source:'top'},
+        {id:'g15',title:'Build icon library',priority:'Low',difficulty:'Easy',hours:15,progress:90,status:'In progress',impact:'Consistent product iconography',due:'5 Aug',source:'bottom'}
+      ]},
+      {id:'ms',name:'Marco Silva',initials:'MS',role:'Product Designer',dept:'Design',color:'#E11D48',bg:'#FFF1F2',readiness:64,goals:[
+        {id:'g16',title:'Mobile redesign phase 1',priority:'High',difficulty:'Hard',hours:45,progress:30,status:'In progress',impact:'Modernizes core mobile flows',due:'30 Sep',source:'top'}
+      ]}
+    ],
+    proposals:[
+      {id:'p1',empId:'jd',title:'Improve API Performance',impact:'Reduce p95 response times by 30%',reason:'Customers report slow dashboard loads under heavy traffic; profiling shows DB query hot spots.',priority:'High',difficulty:'Hard',hours:40,outcome:'p95 latency under 200ms across top 10 endpoints',due:'30 Sep',submitted:'2 days ago'},
+      {id:'p2',empId:'ak',title:'Enroll in leadership program',impact:'Build people-management foundations',reason:'Preparing for a tech-lead track; want structured mentorship before taking on a report.',priority:'Medium',difficulty:'Medium',hours:25,outcome:'Complete 6-module program and lead one feature end-to-end',due:'15 Oct',submitted:'1 day ago'},
+      {id:'p3',empId:'eb',title:'Migrate components to design tokens',impact:'Single source of truth for theming',reason:'Design-system audit surfaced 40+ hardcoded color values blocking dark mode.',priority:'High',difficulty:'Hard',hours:35,outcome:'100% of shared components consuming tokens',due:'20 Nov',submitted:'4 hours ago'}
+    ]
+  };
+  var TEAM = ['jd','mc','ak','eb']; // Sarah Wilson's direct reports
+  function empById(id){ return STATE.employees.filter(function(e){return e.id===id;})[0]; }
+  window.UPMS = {STATE:STATE, level:level, hours:hours, strain:strain, diffMix:diffMix, activeGoals:activeGoals, DIFF:DIFF};
+
+  /* ---- Small helpers ---- */
+  function esc(s){ return (''+s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function badge(cls,txt){ return '<span class="badge '+cls+'">'+esc(txt)+'</span>'; }
+  function diffBadge(d){ return badge(DIFF[d].badge, d); }
+  function prioBadge(p){ return badge(PRIO[p], p); }
+  function statusBadge(st){ return st==='Completed'?'green':st==='In progress'?'blue':'gray'; }
+  function srcChip(s){ return s==='top'
+      ? '<span class="src-chip src-top">\u2193 Manager</span>'
+      : '<span class="src-chip src-bottom">\u2191 Self-proposed</span>'; }
+  function wlPill(h){ var l=level(h); return '<span class="wl-pill '+l.cls+'"><span class="dot"></span>'+l.label+' \u00b7 '+h+'h</span>'; }
+  function avatar(e,sz){ sz=sz||32; return '<div class="av" style="width:'+sz+'px;height:'+sz+'px;background:'+e.bg+';color:'+e.color+'">'+e.initials+'</div>'; }
+  function fmtDue(v){ if(!v)return '\u2014'; var d=new Date(v); if(isNaN(d))return v; var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return d.getDate()+' '+M[d.getMonth()]; }
+  function setSelect(id,val){ var s=document.getElementById(id); if(!s)return; Array.prototype.forEach.call(s.options,function(o){o.selected=(o.value===val||o.text===val);}); }
+
+  /* ---- SVG gauge (0..120h) ---- */
+  function gauge(h){
+    var l=level(h), pct=Math.min(h/120,1), r=66, c=2*Math.PI*r, off=c*(1-pct);
+    return '<div class="gauge"><svg width="160" height="160" viewBox="0 0 160 160">'
+      + '<circle class="gauge-track" cx="80" cy="80" r="'+r+'"/>'
+      + '<circle class="gauge-fill" cx="80" cy="80" r="'+r+'" stroke="'+l.color+'" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"/>'
+      + '</svg><div class="gauge-center"><div class="gauge-val" style="color:'+l.color+'">'+h+'</div><div class="gauge-unit">of ~120h \u00b7 '+l.label+'</div></div></div>';
+  }
+  function goalCardFull(g){
+    var pcls = g.progress>=70?'green':g.progress>=40?'blue':'orange';
+    return '<div class="gc"><div class="gc-head"><div class="gc-title">'+esc(g.title)+'</div>'+badge(statusBadge(g.status),g.status)+'</div>'
+      + '<div class="gc-badges">'+prioBadge(g.priority)+' '+diffBadge(g.difficulty)+' '+srcChip(g.source)+'</div>'
+      + '<div class="progress-bar-wrap"><div class="progress-bar '+pcls+'" style="width:'+g.progress+'%"></div></div>'
+      + '<div class="gc-stats"><span><b>'+g.progress+'%</b> done</span><span><b>'+g.hours+'h</b> est.</span><span>Due <b>'+esc(g.due)+'</b></span></div>'
+      + '<div class="gc-impact">\uD83D\uDCA1 '+esc(g.impact)+'</div></div>';
+  }
+  function diffSegment(e){
+    var m=diffMix(e), keys=['Easy','Medium','Hard','Critical'];
+    var total=keys.reduce(function(a,k){return a+m[k];},0)||1;
+    var col={Easy:'#22C55E',Medium:'#2563EB',Hard:'#F59E0B',Critical:'#EF4444'};
+    var seg='', legend='';
+    keys.forEach(function(k){
+      if(m[k]>0) seg+='<span style="width:'+(m[k]/total*100)+'%;background:'+col[k]+'"></span>';
+      legend+='<div class="it"><span class="sw" style="background:'+col[k]+'"></span>'+k+' \u00b7 '+m[k]+'</div>';
+    });
+    return '<div class="seg">'+seg+'</div><div class="seg-legend">'+legend+'</div>';
+  }
+  function distBars(rows){ // rows: [{label,val,max,color}]
+    return '<div class="dist">'+rows.map(function(r){
+      return '<div class="dist-row"><div class="dist-label">'+esc(r.label)+'</div>'
+        + '<div class="dist-track"><div class="dist-fill" style="width:'+(r.val/(r.max||1)*100)+'%;background:'+r.color+'"></div></div>'
+        + '<div class="dist-val">'+r.val+(r.suffix||'')+'</div></div>';
+    }).join('')+'</div>';
+  }
+
+  /* ---- Toast ---- */
+  var toastWrap=null;
+  function toast(msg,kind){
+    if(!toastWrap){ toastWrap=document.createElement('div'); toastWrap.className='toast-wrap'; document.body.appendChild(toastWrap); }
+    var t=document.createElement('div'); t.className='toast '+(kind||''); t.innerHTML=msg;
+    toastWrap.appendChild(t);
+    setTimeout(function(){ t.style.transition='opacity .3s'; t.style.opacity='0'; setTimeout(function(){t.remove();},300); },2600);
+  }
+
+  /* ========================= RENDERERS ========================= */
+
+  function renderEmpCapacity(){
+    var e=empById('jd'), h=hours(e), l=level(h);
+    document.getElementById('page-emp-capacity').innerHTML =
+      '<div class="page-header"><div class="page-title">My capacity</div><div class="page-desc">Your live workload, difficulty mix, and review readiness \u00b7 Q2 2026</div></div>'
+      + '<div class="two-col mb-20" style="grid-template-columns:300px 1fr">'
+      +   '<div class="card"><div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center">'
+      +     gauge(h)+'<div>'+wlPill(h)+'</div><div class="text-sm text-muted">Estimated active effort this cycle</div>'
+      +   '</div></div>'
+      +   '<div><div class="mini-grid mb-16">'
+      +     '<div class="kpi-card"><div class="kpi-label">Current capacity</div><div class="kpi-value">'+h+'<span style="font-size:14px;color:var(--text-muted)">/120h</span></div><div class="kpi-sub">'+l.label+'</div></div>'
+      +     '<div class="kpi-card"><div class="kpi-label">Strain index</div><div class="kpi-value">'+strain(e)+'</div><div class="kpi-sub">difficulty-weighted</div></div>'
+      +     '<div class="kpi-card"><div class="kpi-label">Active goals</div><div class="kpi-value">'+activeGoals(e).length+'</div><div class="kpi-sub">counting toward load</div></div>'
+      +     '<div class="kpi-card"><div class="kpi-label">Review readiness</div><div class="kpi-value" style="color:var(--primary)">'+e.readiness+'%</div><div class="kpi-sub">on track</div></div>'
+      +   '</div>'
+      +   '<div class="card"><div class="card-header"><div class="card-header-title">Goal difficulty mix</div></div><div class="card-body">'+diffSegment(e)+'</div></div></div>'
+      + '</div>'
+      + '<div class="section-header"><div class="section-title">My active goals</div><button class="btn btn-primary btn-sm" onclick="navigateTo(\'emp-request-goal\')">+ Request new goal</button></div>'
+      + '<div class="goal-grid">'+e.goals.map(goalCardFull).join('')+'</div>';
+  }
+
+  function renderEmpRequest(){
+    document.getElementById('page-emp-request-goal').innerHTML =
+      '<div class="page-header"><div class="page-title">Request a new goal</div><div class="page-desc">Propose a goal for Sarah Wilson to review. Approved proposals become active goals on your plan.</div></div>'
+      + '<div class="two-col" style="grid-template-columns:1fr 320px;align-items:start">'
+      +   '<div class="card"><div class="card-body">'
+      +     '<div class="form-group"><label class="form-label">Goal title</label><input class="form-input" id="rq-title" placeholder="e.g. Improve API performance"/></div>'
+      +     '<div class="form-group"><label class="form-label">Business impact</label><input class="form-input" id="rq-impact" placeholder="e.g. Reduce response times by 30%"/></div>'
+      +     '<div class="form-group"><label class="form-label">Reason for request</label><textarea class="form-textarea" id="rq-reason" placeholder="Why now? What problem does this solve?"></textarea></div>'
+      +     '<div class="form-row">'
+      +       '<div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="rq-prio"><option>Low</option><option selected>Medium</option><option>High</option><option>Critical</option></select></div>'
+      +       '<div class="form-group"><label class="form-label">Difficulty</label><select class="form-select" id="rq-diff"><option>Easy</option><option selected>Medium</option><option>Hard</option><option>Critical</option></select></div>'
+      +     '</div>'
+      +     '<div class="form-row">'
+      +       '<div class="form-group"><label class="form-label">Estimated effort (hours)</label><input class="form-input" id="rq-hours" type="number" min="1" value="20" oninput="UPMSui.preview()"/></div>'
+      +       '<div class="form-group"><label class="form-label">Expected completion</label><input class="form-input" id="rq-due" type="date" value="2026-09-30"/></div>'
+      +     '</div>'
+      +     '<div class="form-group"><label class="form-label">Target outcome</label><input class="form-input" id="rq-outcome" placeholder="What does done look like, measurably?"/></div>'
+      +     '<div class="flex gap-8" style="justify-content:flex-end;margin-top:6px"><button class="btn btn-secondary" onclick="navigateTo(\'emp-capacity\')">Cancel</button><button class="btn btn-primary" onclick="UPMSui.submitProposal()">Submit request</button></div>'
+      +   '</div></div>'
+      +   '<div class="card"><div class="card-header"><div class="card-header-title">Capacity preview</div></div><div class="card-body" id="rq-preview"></div></div>'
+      + '</div>';
+    preview();
+  }
+  function preview(){
+    var box=document.getElementById('rq-preview'); if(!box)return;
+    var e=empById('jd'), cur=hours(e);
+    var add=parseInt((document.getElementById('rq-hours')||{}).value||'0',10)||0;
+    var proj=cur+add, lp=level(proj), warn='';
+    if(lp.key==='over') warn='<div class="alert warning" style="margin-top:12px">\u26A0\uFE0F This would push you to <b>Overloaded</b>. Sarah may rebalance or defer it.</div>';
+    else if(lp.key==='high') warn='<div class="alert info" style="margin-top:12px">This moves you into <b>High load</b> territory.</div>';
+    box.innerHTML =
+      '<div class="over-stat"><span class="k">Current load</span><span class="v">'+cur+'h</span></div>'
+      + '<div class="over-stat"><span class="k">This request</span><span class="v">+'+add+'h</span></div>'
+      + '<div class="over-stat"><span class="k">Projected</span><span class="v" style="color:'+lp.color+'">'+proj+'h</span></div>'
+      + '<div style="margin-top:12px">'+wlPill(proj)+'</div>'+warn;
+  }
+  function submitProposal(){
+    var t=(document.getElementById('rq-title').value||'').trim();
+    var hrs=parseInt(document.getElementById('rq-hours').value||'0',10)||0;
+    if(!t){ toast('Please add a goal title','warn'); return; }
+    if(hrs<1){ toast('Estimated effort must be at least 1 hour','warn'); return; }
+    STATE.proposals.push({
+      id:'p'+Date.now(), empId:'jd', title:t,
+      impact:(document.getElementById('rq-impact').value||'').trim()||'\u2014',
+      reason:(document.getElementById('rq-reason').value||'').trim()||'\u2014',
+      priority:document.getElementById('rq-prio').value,
+      difficulty:document.getElementById('rq-diff').value,
+      hours:hrs, outcome:(document.getElementById('rq-outcome').value||'').trim()||'\u2014',
+      due:fmtDue(document.getElementById('rq-due').value), submitted:'Just now', fresh:true
+    });
+    toast('\u2713 Goal request submitted to Sarah Wilson','success');
+    window.renderSidebar();
+    navigateTo('emp-capacity');
+  }
+
+  function renderMgrRequests(){
+    var ps=STATE.proposals, body;
+    if(ps.length){
+      body = ps.map(function(p){
+        var e=empById(p.empId), cur=hours(e), proj=cur+p.hours, lp=level(proj);
+        return '<div class="req-card '+(p.fresh?'flash':'')+'">'
+          + '<div class="req-top"><div class="req-emp">'+avatar(e)+'<div><div class="nm">'+e.name+'</div><div class="sub">'+e.role+'</div></div></div><span class="text-sm text-muted">'+esc(p.submitted)+'</span></div>'
+          + '<div class="req-goal-title">'+esc(p.title)+'</div>'
+          + '<div class="req-impact">'+esc(p.impact)+'</div>'
+          + '<div class="req-attrs">'
+          +   '<div class="req-attr"><span class="k">Priority</span><span class="v">'+prioBadge(p.priority)+'</span></div>'
+          +   '<div class="req-attr"><span class="k">Difficulty</span><span class="v">'+diffBadge(p.difficulty)+'</span></div>'
+          +   '<div class="req-attr"><span class="k">Effort</span><span class="v">'+p.hours+'h</span></div>'
+          +   '<div class="req-attr"><span class="k">Due</span><span class="v">'+esc(p.due)+'</span></div>'
+          + '</div>'
+          + '<div class="alert '+(lp.key==='over'?'warning':'info')+'" style="margin:0">Approving moves <b>'+e.name+'</b> from '+cur+'h \u2192 <b style="color:'+lp.color+'">'+proj+'h</b> ('+lp.label+')</div>'
+          + '<div class="req-actions">'
+          +   '<button class="btn btn-primary" onclick="UPMSui.approveProposal(\''+p.id+'\')">Approve</button>'
+          +   '<button class="btn btn-secondary" onclick="UPMSui.openModify(\''+p.id+'\')">Modify</button>'
+          +   '<button class="btn btn-danger" onclick="UPMSui.rejectProposal(\''+p.id+'\')">Reject</button>'
+          + '</div></div>';
+      }).join('');
+      ps.forEach(function(p){ p.fresh=false; });
+    } else {
+      body = '<div class="empty-state"><div class="empty-icon">\uD83D\uDCE5</div><div class="empty-title">No pending requests</div><div class="empty-desc">When your team proposes goals, they\u2019ll appear here for approval.</div></div>';
+    }
+    document.getElementById('page-mgr-requests').innerHTML =
+      '<div class="page-header"><div class="page-title">Goal requests</div><div class="page-desc">Bottom-up goal proposals from your team awaiting your decision</div></div>'
+      + '<div class="goal-grid">'+body+'</div>';
+  }
+  function approveProposal(id, ov){
+    var p=STATE.proposals.filter(function(x){return x.id===id;})[0]; if(!p)return;
+    var e=empById(p.empId);
+    e.goals.push({ id:'g'+Date.now(), title:p.title,
+      priority:(ov&&ov.priority)||p.priority, difficulty:(ov&&ov.difficulty)||p.difficulty,
+      hours:(ov&&ov.hours)||p.hours, progress:0, status:'Not started', impact:p.impact,
+      due:(ov&&ov.due)||p.due, source:'bottom' });
+    STATE.proposals=STATE.proposals.filter(function(x){return x.id!==id;});
+    closeModal('modifyModal');
+    toast('\u2713 Approved \u2014 "'+esc(p.title)+'" added to '+e.name+'\u2019s plan','success');
+    refresh();
+  }
+  function rejectProposal(id){
+    var p=STATE.proposals.filter(function(x){return x.id===id;})[0]; if(!p)return;
+    STATE.proposals=STATE.proposals.filter(function(x){return x.id!==id;});
+    toast('Request rejected \u2014 '+esc(p.title),'danger');
+    refresh();
+  }
+  var modifyId=null;
+  function openModify(id){
+    var p=STATE.proposals.filter(function(x){return x.id===id;})[0]; if(!p)return; modifyId=id;
+    document.getElementById('mod-title').textContent=p.title;
+    document.getElementById('mod-hours').value=p.hours;
+    setSelect('mod-diff',p.difficulty); setSelect('mod-prio',p.priority);
+    openModal('modifyModal');
+  }
+  function saveModify(){
+    approveProposal(modifyId, {
+      hours:parseInt(document.getElementById('mod-hours').value,10)||0,
+      difficulty:document.getElementById('mod-diff').value,
+      priority:document.getElementById('mod-prio').value
+    });
+  }
+
+  function renderMgrCapacity(){
+    var team=TEAM.map(empById);
+    var loads=team.map(function(e){return {e:e,h:hours(e)};});
+    var total=loads.reduce(function(s,x){return s+x.h;},0);
+    var avg=Math.round(total/team.length);
+    var over=loads.filter(function(x){return level(x.h).key==='over';}).length;
+    var healthy=loads.filter(function(x){return level(x.h).key==='healthy';}).length;
+    var maxH=Math.max.apply(null,loads.map(function(x){return x.h;}).concat([1]));
+    var rows=loads.map(function(o){
+      var l=level(o.h), pct=Math.min(o.h/120*100,100);
+      return '<div class="cap-row"><div class="cap-emp">'+avatar(o.e,34)+'<div><div class="nm">'+o.e.name+'</div><div class="rl">'+o.e.role+'</div></div></div>'
+        + '<div><div class="cap-meter"><div class="cap-meter-fill" style="width:'+pct+'%;background:'+l.color+'"></div></div>'
+        + '<div class="cap-scale"><span>0</span><span>40</span><span>70</span><span>100</span><span>120h</span></div></div>'
+        + '<div class="cap-hours" style="color:'+l.color+'">'+o.h+'h<div style="font-size:11px;font-weight:600;margin-top:2px">'+l.emoji+' '+l.label+'</div></div></div>';
+    }).join('');
+    var wlRows=loads.map(function(o){ return {label:o.e.initials, val:o.h, max:maxH, color:level(o.h).color, suffix:'h'}; });
+    var agg={Easy:0,Medium:0,Hard:0,Critical:0};
+    team.forEach(function(e){ var m=diffMix(e); for(var k in m){ agg[k]+=m[k]; } });
+    var maxD=Math.max.apply(null,Object.keys(agg).map(function(k){return agg[k];}).concat([1]));
+    var dcol={Easy:'#22C55E',Medium:'#2563EB',Hard:'#F59E0B',Critical:'#EF4444'};
+    var dRows=['Easy','Medium','Hard','Critical'].map(function(k){ return {label:k, val:agg[k], max:maxD, color:dcol[k]}; });
+    document.getElementById('page-mgr-capacity').innerHTML =
+      '<div class="page-header flex justify-between items-center"><div><div class="page-title">Team capacity</div><div class="page-desc">Live workload across your '+team.length+' direct reports</div></div><button class="btn btn-primary" onclick="navigateTo(\'mgr-assign\')">+ Assign goal</button></div>'
+      + '<div class="kpi-grid">'
+      +   '<div class="kpi-card"><div class="kpi-label">Total active load</div><div class="kpi-value">'+total+'h</div><div class="kpi-sub">across team</div></div>'
+      +   '<div class="kpi-card"><div class="kpi-label">Avg per person</div><div class="kpi-value">'+avg+'h</div><div class="kpi-sub">'+level(avg).label+'</div></div>'
+      +   '<div class="kpi-card"><div class="kpi-label">Overloaded</div><div class="kpi-value" style="color:var(--danger)">'+over+'</div><div class="kpi-sub">need rebalancing</div></div>'
+      +   '<div class="kpi-card"><div class="kpi-label">Healthy</div><div class="kpi-value" style="color:var(--success)">'+healthy+'</div><div class="kpi-sub">room for more</div></div>'
+      + '</div>'
+      + '<div class="card mb-20"><div class="card-header"><div class="card-header-title">Workload by person</div></div><div class="card-body">'+rows+'</div></div>'
+      + '<div class="two-col"><div class="chart-card"><div class="chart-title">Workload distribution</div>'+distBars(wlRows)+'</div>'
+      + '<div class="chart-card"><div class="chart-title">Difficulty distribution</div>'+distBars(dRows)+'</div></div>';
+  }
+
+  function lightest(excludeId){
+    return TEAM.map(empById).filter(function(e){return e.id!==excludeId;}).sort(function(a,b){return hours(a)-hours(b);})[0];
+  }
+  function renderMgrAssign(){
+    var opts=TEAM.map(function(id){ var e=empById(id); return '<option value="'+id+'">'+e.name+' \u00b7 '+hours(e)+'h ('+level(hours(e)).label+')</option>'; }).join('');
+    document.getElementById('page-mgr-assign').innerHTML =
+      '<div class="page-header"><div class="page-title">Assign goal</div><div class="page-desc">Top-down goal assignment with live overload detection</div></div>'
+      + '<div class="two-col" style="grid-template-columns:1fr 320px;align-items:start">'
+      +   '<div class="card"><div class="card-body">'
+      +     '<div class="form-group"><label class="form-label">Goal title</label><input class="form-input" id="as-title" placeholder="e.g. Reduce AWS costs by 30%"/></div>'
+      +     '<div class="form-group"><label class="form-label">Employee</label><select class="form-select" id="as-emp" onchange="UPMSui.assignPreview()">'+opts+'</select></div>'
+      +     '<div class="form-row">'
+      +       '<div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="as-prio"><option>Low</option><option>Medium</option><option selected>High</option><option>Critical</option></select></div>'
+      +       '<div class="form-group"><label class="form-label">Difficulty</label><select class="form-select" id="as-diff"><option>Easy</option><option>Medium</option><option selected>Hard</option><option>Critical</option></select></div>'
+      +     '</div>'
+      +     '<div class="form-row">'
+      +       '<div class="form-group"><label class="form-label">Estimated effort (hours)</label><input class="form-input" id="as-hours" type="number" min="1" value="40" oninput="UPMSui.assignPreview()"/></div>'
+      +       '<div class="form-group"><label class="form-label">Due date</label><input class="form-input" id="as-due" type="date" value="2026-09-30"/></div>'
+      +     '</div>'
+      +     '<div class="form-group"><label class="form-label">Business impact</label><input class="form-input" id="as-impact" placeholder="e.g. Cut quarterly cloud spend by ~$48k"/></div>'
+      +     '<div class="flex gap-8" style="justify-content:flex-end"><button class="btn btn-secondary" onclick="navigateTo(\'mgr-capacity\')">Cancel</button><button class="btn btn-primary" onclick="UPMSui.tryAssign()">Assign goal</button></div>'
+      +   '</div></div>'
+      +   '<div class="card"><div class="card-header"><div class="card-header-title">Capacity impact</div></div><div class="card-body" id="as-preview"></div></div>'
+      + '</div>';
+    assignPreview();
+  }
+  function assignPreview(){
+    var box=document.getElementById('as-preview'); if(!box)return;
+    var e=empById(document.getElementById('as-emp').value);
+    var add=parseInt(document.getElementById('as-hours').value||'0',10)||0;
+    var cur=hours(e), proj=cur+add, lp=level(proj), rec='';
+    if(lp.key==='over'){ var best=lightest(e.id); rec='<div class="alert info" style="margin-top:12px">\uD83D\uDCA1 Consider <b>'+best.name+'</b> instead ('+hours(best)+'h, '+level(hours(best)).label+').</div>'; }
+    box.innerHTML =
+      '<div class="flex items-center gap-8 mb-12">'+avatar(e,34)+'<div><div style="font-weight:600;font-size:13px">'+e.name+'</div><div class="text-sm text-muted">'+e.role+'</div></div></div>'
+      + '<div class="over-stat"><span class="k">Current</span><span class="v">'+cur+'h</span></div>'
+      + '<div class="over-stat"><span class="k">This goal</span><span class="v">+'+add+'h</span></div>'
+      + '<div class="over-stat"><span class="k">Projected</span><span class="v" style="color:'+lp.color+'">'+proj+'h</span></div>'
+      + '<div style="margin-top:12px">'+wlPill(proj)+'</div>'+rec;
+  }
+  function tryAssign(){
+    var e=empById(document.getElementById('as-emp').value);
+    var t=(document.getElementById('as-title').value||'').trim();
+    var add=parseInt(document.getElementById('as-hours').value||'0',10)||0;
+    if(!t){ toast('Please add a goal title','warn'); return; }
+    if(add<1){ toast('Estimated effort must be at least 1 hour','warn'); return; }
+    var cur=hours(e), proj=cur+add, lp=level(proj);
+    if(lp.key==='over'){ openOverload(e,cur,proj); return; }
+    commitAssign();
+  }
+  function commitAssign(){
+    var e=empById(document.getElementById('as-emp').value);
+    e.goals.push({ id:'g'+Date.now(), title:(document.getElementById('as-title').value||'').trim(),
+      priority:document.getElementById('as-prio').value, difficulty:document.getElementById('as-diff').value,
+      hours:parseInt(document.getElementById('as-hours').value,10)||0, progress:0, status:'Not started',
+      impact:(document.getElementById('as-impact').value||'').trim()||'\u2014',
+      due:fmtDue(document.getElementById('as-due').value), source:'top' });
+    closeModal('overloadModal');
+    toast('\u2713 "'+esc(e.goals[e.goals.length-1].title)+'" assigned to '+e.name,'success');
+    navigateTo('mgr-capacity');
+  }
+  function openOverload(e,cur,proj){
+    var best=lightest(e.id);
+    document.getElementById('ov-emp').textContent=e.name;
+    document.getElementById('ov-cur').textContent=cur+'h';
+    var after=document.getElementById('ov-after'); after.textContent=proj+'h'; after.style.color=level(proj).color;
+    document.getElementById('ov-rec').innerHTML='\uD83E\uDDED <b>'+best.name+'</b> has the most headroom right now \u2014 '+hours(best)+'h ('+level(hours(best)).label+'). Consider assigning there instead.';
+    openModal('overloadModal');
+  }
+
+  function renderHrWorkload(){
+    var all=STATE.employees, loads=all.map(function(e){return {e:e,h:hours(e)};});
+    var over=loads.filter(function(x){return level(x.h).key==='over';});
+    var high=loads.filter(function(x){return level(x.h).key==='high';});
+    var avg=Math.round(loads.reduce(function(s,x){return s+x.h;},0)/all.length);
+    var atRisk=over.concat(high);
+    var depts=['Engineering','Product','Design'];
+    var deptData=depts.map(function(d){
+      var es=all.filter(function(e){return e.dept===d;});
+      var a=Math.round(es.reduce(function(s,e){return s+hours(e);},0)/es.length);
+      return {d:d,a:a,es:es};
+    });
+    var overAssign=deptData.filter(function(x){return x.a>85;}).length;
+    var heat=deptData.map(function(o){
+      var cells=o.es.map(function(e){ var l=level(hours(e)); return '<div class="heat-cell" style="background:'+l.color+'" title="'+esc(e.name)+': '+hours(e)+'h">'+e.initials+'<span style="opacity:.85;margin-left:4px">'+hours(e)+'</span></div>'; }).join('');
+      return '<div class="heat-row"><div class="dist-label">'+o.d+'</div><div class="heat-cells">'+cells+'</div></div>';
+    }).join('');
+    var agg={Easy:0,Medium:0,Hard:0,Critical:0};
+    all.forEach(function(e){ var m=diffMix(e); for(var k in m){ agg[k]+=m[k]; } });
+    var maxD=Math.max.apply(null,Object.keys(agg).map(function(k){return agg[k];}).concat([1]));
+    var dcol={Easy:'#22C55E',Medium:'#2563EB',Hard:'#F59E0B',Critical:'#EF4444'};
+    var dRows=['Easy','Medium','Hard','Critical'].map(function(k){ return {label:k, val:agg[k], max:maxD, color:dcol[k]}; });
+    var riskRows=atRisk.sort(function(a,b){return b.h-a.h;}).map(function(o){
+      var l=level(o.h);
+      return '<tr><td><div class="flex items-center gap-8">'+avatar(o.e,28)+esc(o.e.name)+'</div></td><td>'+o.e.dept+'</td><td><span style="color:'+l.color+';font-weight:700">'+o.h+'h</span></td><td>'+wlPill(o.h)+'</td></tr>';
+    }).join('');
+    document.getElementById('page-hr-workload').innerHTML =
+      '<div class="page-header"><div class="page-title">Workload analytics</div><div class="page-desc">Company-wide capacity health \u00b7 '+all.length+' employees across '+depts.length+' departments</div></div>'
+      + '<div class="kpi-grid">'
+      +   '<div class="kpi-card"><div class="kpi-label">Employees overloaded</div><div class="kpi-value" style="color:var(--danger)">'+over.length+'</div><div class="kpi-sub">over 100h active</div></div>'
+      +   '<div class="kpi-card"><div class="kpi-label">Depts over-assigning</div><div class="kpi-value" style="color:var(--warning)">'+overAssign+'</div><div class="kpi-sub">avg load &gt; 85h</div></div>'
+      +   '<div class="kpi-card"><div class="kpi-label">Avg team capacity</div><div class="kpi-value">'+avg+'h</div><div class="kpi-sub">'+level(avg).label+'</div></div>'
+      +   '<div class="kpi-card"><div class="kpi-label">Employees at risk</div><div class="kpi-value" style="color:var(--warning)">'+atRisk.length+'</div><div class="kpi-sub">high load or overloaded</div></div>'
+      + '</div>'
+      + '<div class="card mb-20"><div class="card-header"><div class="card-header-title">Department workload heatmap</div></div><div class="card-body"><div class="heatmap">'+heat+'</div>'
+      +   '<div class="seg-legend" style="margin-top:14px"><div class="it"><span class="sw" style="background:#22C55E"></span>Healthy</div><div class="it"><span class="sw" style="background:#F59E0B"></span>Busy</div><div class="it"><span class="sw" style="background:#F97316"></span>High load</div><div class="it"><span class="sw" style="background:#EF4444"></span>Overloaded</div></div></div></div>'
+      + '<div class="two-col"><div class="chart-card"><div class="chart-title">Goal difficulty distribution</div>'+distBars(dRows)+'</div>'
+      +   '<div class="card"><div class="card-header"><div class="card-header-title">Employees at risk</div><span class="badge red">'+atRisk.length+'</span></div><div class="table-wrap"><table><thead><tr><th>Employee</th><th>Dept</th><th>Load</th><th>Status</th></tr></thead><tbody>'+riskRows+'</tbody></table></div></div></div>';
+  }
+
+  function injectEmpDetail(){
+    var page=document.getElementById('page-mgr-employee-detail');
+    if(!page || document.getElementById('edWorkloadCard')) return;
+    var e=empById('jd'), h=hours(e);
+    var card=document.createElement('div'); card.className='card mb-20'; card.id='edWorkloadCard';
+    card.innerHTML =
+      '<div class="card-header"><div class="card-header-title">Workload &amp; difficulty</div>'+wlPill(h)+'</div>'
+      + '<div class="card-body"><div class="two-col" style="align-items:center">'
+      +   '<div style="display:flex;align-items:center;gap:16px">'+gauge(h)+'<div><div class="text-sm text-muted">Strain index</div><div style="font-size:24px;font-weight:700">'+strain(e)+'</div><div class="text-sm text-muted mt-4">'+activeGoals(e).length+' active goals \u00b7 avg difficulty '+avgDiff(e)+'</div></div></div>'
+      +   '<div>'+diffSegment(e)+'</div>'
+      + '</div>'
+      + '<div class="alert info mt-16" style="margin-bottom:0">'+e.name+' is sustaining <b>'+h+'h</b> of active load at <b>'+avgDiff(e)+'</b> average difficulty \u2014 a strong ownership signal for the review.</div></div>';
+    var profile=page.querySelector('.profile-header');
+    if(profile && profile.nextSibling) page.insertBefore(card, profile.nextSibling);
+    else page.appendChild(card);
+  }
+
+  /* ---- dispatch + refresh ---- */
+  var RENDERERS = {
+    'emp-capacity':renderEmpCapacity,
+    'emp-request-goal':renderEmpRequest,
+    'mgr-capacity':renderMgrCapacity,
+    'mgr-requests':renderMgrRequests,
+    'mgr-assign':renderMgrAssign,
+    'hr-workload':renderHrWorkload,
+    'mgr-employee-detail':injectEmpDetail
+  };
+  function renderDynamic(pageId){ if(RENDERERS[pageId]) RENDERERS[pageId](); }
+  function refresh(){ renderDynamic(activePageId); window.renderSidebar(); }
+
+  /* ---- expose handlers for inline onclick ---- */
+  window.UPMSui = {
+    preview:preview, submitProposal:submitProposal,
+    approveProposal:approveProposal, rejectProposal:rejectProposal,
+    openModify:openModify, saveModify:saveModify,
+    assignPreview:assignPreview, tryAssign:tryAssign, commitAssign:commitAssign
+  };
+
+  /* ---- wire nav items into each persona ---- */
+  USERS.employee.nav.splice(1,0,{id:'emp-capacity',label:'My capacity',icon:'\uD83D\uDD0B'});
+  USERS.employee.nav.splice(3,0,{id:'emp-request-goal',label:'Request goal',icon:'\uD83C\uDFAF'});
+  USERS.manager.nav.splice(1,0,{id:'mgr-capacity',label:'Team capacity',icon:'\uD83E\uDDED'});
+  USERS.manager.nav.splice(3,0,{id:'mgr-requests',label:'Goal requests',icon:'\uD83D\uDCE5'});
+  USERS.manager.nav.splice(5,0,{id:'mgr-assign',label:'Assign goal',icon:'\u2795'});
+  USERS.hr.nav.splice(2,0,{id:'hr-workload',label:'Workload analytics',icon:'\uD83D\uDD25'});
+
+  /* ---- wrap navigateTo so dynamic pages render on entry ---- */
+  var _origNavigateTo=window.navigateTo;
+  window.navigateTo=function(pageId){
+    _origNavigateTo(pageId);
+    try{ renderDynamic(pageId); }catch(err){ console.error('UPMS renderDynamic error:',err); }
+  };
+  /* ---- wrap renderSidebar to add the live request-count badge ---- */
+  var _origRenderSidebar=window.renderSidebar;
+  window.renderSidebar=function(){
+    _origRenderSidebar();
+    try{
+      if(currentUser==='manager'){
+        var n=STATE.proposals.length;
+        var item=document.querySelector('.nav-item[onclick*="mgr-requests"]');
+        if(item && n>0 && !item.querySelector('.nav-badge')){
+          var b=document.createElement('span'); b.className='nav-badge'; b.textContent=n; item.appendChild(b);
+        }
+      }
+    }catch(err){}
+  };
+  /* refresh sidebar so the new items + badge appear immediately */
+  window.renderSidebar();
+})();
+
+</script>
+</body>
+</html>
